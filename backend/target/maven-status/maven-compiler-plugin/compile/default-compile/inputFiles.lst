@@ -1,0 +1,11 @@
+D:\HoaiNhan\Code\Code_java\Workify\backend\src\main\java\com\workify\backend\config\CorsConfig.java
+D:\HoaiNhan\Code\Code_java\Workify\backend\src\main\java\com\workify\backend\config\CorsProperties.java
+D:\HoaiNhan\Code\Code_java\Workify\backend\src\main\java\com\workify\backend\config\JwtProperties.java
+D:\HoaiNhan\Code\Code_java\Workify\backend\src\main\java\com\workify\backend\config\SecurityConfig.java
+D:\HoaiNhan\Code\Code_java\Workify\backend\src\main\java\com\workify\backend\controller\UserController.java
+D:\HoaiNhan\Code\Code_java\Workify\backend\src\main\java\com\workify\backend\dto\RegisterRequest.java
+D:\HoaiNhan\Code\Code_java\Workify\backend\src\main\java\com\workify\backend\dto\UserResponse.java
+D:\HoaiNhan\Code\Code_java\Workify\backend\src\main\java\com\workify\backend\model\User.java
+D:\HoaiNhan\Code\Code_java\Workify\backend\src\main\java\com\workify\backend\repository\UserRepository.java
+D:\HoaiNhan\Code\Code_java\Workify\backend\src\main\java\com\workify\backend\service\UserService.java
+D:\HoaiNhan\Code\Code_java\Workify\backend\src\main\java\com\workify\backend\WorkifyBackendApplication.java

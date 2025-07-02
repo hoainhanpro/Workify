@@ -1,0 +1,22 @@
+{
+  "name": "workify",
+  "version": "1.0.0",
+  "description": "Sistema de gestión de trabajo moderno",
+  "main": "backend/server.js",
+  "scripts": {
+    "install:frontend": "cd frontend && npm install",
+    "install:backend": "cd backend && npm install",
+    "install:all": "npm run install:backend && npm run install:frontend",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:backend": "cd backend && npm run dev",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "start": "cd backend && npm start",
+    "build": "cd frontend && npm run build"
+  },
+  "keywords": ["nodejs", "react", "mongodb", "express", "jwt", "bootstrap"],
+  "author": "Workify Team",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+} 
