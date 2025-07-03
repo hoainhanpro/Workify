@@ -1,16 +1,17 @@
 package com.workify.backend.service;
 
-import com.workify.backend.dto.RegisterRequest;
-import com.workify.backend.dto.UserResponse;
-import com.workify.backend.model.User;
-import com.workify.backend.repository.UserRepository;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
+import com.workify.backend.dto.RegisterRequest;
+import com.workify.backend.dto.UserResponse;
+import com.workify.backend.model.User;
+import com.workify.backend.repository.UserRepository;
 
 @Service
 public class UserService {
@@ -45,6 +46,30 @@ public class UserService {
         // Save user
         User savedUser = userRepository.save(user);
         return new UserResponse(savedUser);
+    }
+
+    // Authenticate user
+    public Optional<UserResponse> authenticateUser(String usernameOrEmail, String password) {
+        // Tìm user bằng username hoặc email
+        Optional<User> userOpt = userRepository.findByUsernameOrEmail(usernameOrEmail);
+
+        if (userOpt.isPresent()) {
+            User user = userOpt.get();
+
+            // Kiểm tra password
+            if (passwordEncoder.matches(password, user.getPassword())) {
+                // Kiểm tra user có enabled không
+                if (user.isEnabled()) {
+                    return Optional.of(new UserResponse(user));
+                } else {
+                    throw new RuntimeException("Account is disabled");
+                }
+            } else {
+                throw new RuntimeException("Invalid password");
+            }
+        } else {
+            throw new RuntimeException("User not found");
+        }
     }
 
     // Get user by ID
@@ -126,7 +151,7 @@ public class UserService {
         long disabledUsers = userRepository.countByEnabled(false);
         long adminUsers = userRepository.countByRole("ADMIN");
         long regularUsers = userRepository.countByRole("USER");
-        
+
         return new UserStats(totalUsers, enabledUsers, disabledUsers, adminUsers, regularUsers);
     }
 
@@ -153,4 +178,4 @@ public class UserService {
         public long getAdminUsers() { return adminUsers; }
         public long getRegularUsers() { return regularUsers; }
     }
-} 
+}

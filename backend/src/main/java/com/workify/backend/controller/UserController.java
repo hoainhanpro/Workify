@@ -1,18 +1,25 @@
 package com.workify.backend.controller;
 
-import com.workify.backend.dto.RegisterRequest;
-import com.workify.backend.dto.UserResponse;
-import com.workify.backend.service.UserService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import jakarta.validation.Valid;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.workify.backend.dto.UserResponse;
+import com.workify.backend.service.UserService;
 
 @RestController
 @RequestMapping("/api/users")
@@ -22,24 +29,7 @@ public class UserController {
     @Autowired
     private UserService userService;
 
-    // Register new user
-    @PostMapping("/register")
-    public ResponseEntity<Map<String, Object>> registerUser(@Valid @RequestBody RegisterRequest registerRequest) {
-        Map<String, Object> response = new HashMap<>();
-        try {
-            UserResponse userResponse = userService.registerUser(registerRequest);
-            response.put("success", true);
-            response.put("message", "User registered successfully");
-            response.put("data", userResponse);
-            return ResponseEntity.status(HttpStatus.CREATED).body(response);
-        } catch (RuntimeException e) {
-            response.put("success", false);
-            response.put("message", e.getMessage());
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
-        }
-    }
-
-    // Get all users (Admin only - will add auth later)
+    // Get all users (Admin only)
     @GetMapping
     public ResponseEntity<Map<String, Object>> getAllUsers() {
         List<UserResponse> users = userService.getAllUsers();
@@ -179,4 +169,4 @@ public class UserController {
         response.put("data", exists);
         return ResponseEntity.ok(response);
     }
-} 
+}

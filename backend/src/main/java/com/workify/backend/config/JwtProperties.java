@@ -8,7 +8,7 @@ import org.springframework.context.annotation.Configuration;
 public class JwtProperties {
     
     private String secret;
-    private long expiration = 86400; // 1 day default
+    private long expiration = 8640000; // 1 day default
     
     public String getSecret() {
         return secret;
