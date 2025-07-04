@@ -1,0 +1,29 @@
+/* Main Layout Styles */
+.main-layout {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-content {
+  flex: 1;
+  padding: 20px 0;
+  background-color: #f8f9fa;
+}
+
+.main-content .container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .main-content {
+    padding: 10px 0;
+  }
+  
+  .main-content .container {
+    padding: 0 15px;
+  }
+}
