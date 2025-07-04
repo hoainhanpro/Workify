@@ -1,9 +1,112 @@
-import { authAPI } from './api.js'
+// API Base Configuration
+const API_BASE_URL = 'http://localhost:8080/api'
 
 // Token management
 const TOKEN_KEY = 'workify_access_token'
 const REFRESH_TOKEN_KEY = 'workify_refresh_token'
 const USER_KEY = 'workify_user'
+
+// Get auth token from localStorage
+const getAuthToken = () => {
+  return localStorage.getItem(TOKEN_KEY)
+}
+
+// Basic HTTP client for auth operations
+const authAPI = {
+  // POST request
+  post: async (endpoint, data, requiresAuth = false) => {
+    try {
+      const headers = {
+        'Content-Type': 'application/json',
+      }
+
+      // Add auth header if required
+      if (requiresAuth) {
+        const token = getAuthToken()
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`
+        }
+      }
+
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(data),
+      })
+      
+      const responseData = await response.json()
+      
+      if (!response.ok) {
+        throw new Error(responseData.message || `HTTP error! status: ${response.status}`)
+      }
+      
+      return responseData
+    } catch (error) {
+      console.error('POST request failed:', error)
+      throw error
+    }
+  },
+
+  // GET request
+  get: async (endpoint, requiresAuth = false) => {
+    try {
+      const headers = {
+        'Content-Type': 'application/json',
+      }
+
+      // Add auth header if required
+      if (requiresAuth) {
+        const token = getAuthToken()
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`
+        }
+      }
+
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        method: 'GET',
+        headers,
+      })
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+      
+      return await response.json()
+    } catch (error) {
+      console.error('GET request failed:', error)
+      throw error
+    }
+  },
+
+  // Authentication API functions
+  register: async (userData) => {
+    return await authAPI.post('/auth/register', userData, false)
+  },
+
+  login: async (credentials) => {
+    return await authAPI.post('/auth/login', credentials, false)
+  },
+
+  refreshToken: async (refreshToken) => {
+    return await authAPI.post('/auth/refresh', { refreshToken }, false)
+  },
+
+  getProfile: async () => {
+    return await authAPI.get('/auth/profile', true)
+  },
+
+  getAuthStatus: async () => {
+    return await authAPI.get('/auth/status', true)
+  },
+
+  logout: async () => {
+    return await authAPI.post('/auth/logout', {}, true)
+  },
+
+  logoutAll: async () => {
+    return await authAPI.post('/auth/logout-all', {}, true)
+  }
+}
 
 const authService = {
   // Set tokens in localStorage
