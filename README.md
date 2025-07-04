@@ -186,7 +186,7 @@ SERVER_PORT=8080
 
 ## Roadmap
 
-- [ ] **Authentication & Authorization**: JWT login/logout hoàn chỉnh
+- [✔️] **Authentication & Authorization**: JWT login/logout hoàn chỉnh
 - [ ] **Note Management**: CRUD operations cho notes
 - [ ] **Note Sharing**: Chia sẻ và cộng tác trên notes
 - [ ] **AI Integration**: Tích hợp AI để hỗ trợ viết nội dung
