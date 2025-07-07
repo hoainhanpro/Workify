@@ -135,39 +135,135 @@
   font-weight: bold;
 }
 
-/* Responsive Design */
-@media (max-width: 992px) {
-  .workify-sidebar {
-    position: fixed;
-    left: -280px;
-    z-index: 1020;
-    transition: left 0.3s ease;
+/* Tasks Page Responsive Styles */
+.task-filters {
+  min-height: 42px;
+}
+
+.task-filters .btn {
+  min-width: 80px;
+  flex: 1;
+  font-size: 14px;
+  padding: 8px 12px;
+  white-space: nowrap;
+}
+
+.task-filters .badge {
+  font-size: 11px;
+  padding: 2px 6px;
+}
+
+/* Responsive improvements for mobile */
+@media (max-width: 576px) {
+  .task-filters {
+    gap: 8px !important;
   }
   
-  .workify-sidebar.show {
-    left: 0;
+  .task-filters .btn {
+    min-width: 70px;
+    font-size: 12px;
+    padding: 6px 8px;
+    flex: 1;
   }
   
-  .workify-main {
-    margin-left: 0;
+  .task-filters .badge {
+    font-size: 10px;
+    padding: 1px 4px;
+  }
+  
+  /* Stack filter buttons in 2x2 grid on very small screens */
+  .task-filters {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  
+  .task-filters .btn {
+    flex: none;
   }
 }
 
+/* Medium screen improvements */
 @media (max-width: 768px) {
   .workify-main {
-    padding: 16px;
+    padding: 16px 12px;
   }
   
-  .sidebar-item {
-    padding: 10px 12px;
+  .tasks-page .row.g-3 {
+    --bs-gutter-x: 0.75rem;
   }
   
-  .sidebar-label {
-    font-size: 13px;
+  .tasks-page .card-body {
+    padding: 1rem;
   }
   
-  .sidebar-description {
-    font-size: 11px;
+  .tasks-page .card h6.small {
+    font-size: 0.875rem;
+  }
+  
+  .tasks-page .card h6 {
+    font-size: 0.75rem;
+    margin-bottom: 0.25rem !important;
+  }
+  
+  .tasks-page .card h4 {
+    font-size: 1.25rem;
+  }
+  
+  .tasks-page .fs-1 {
+    font-size: 1.5rem !important;
+  }
+}
+
+/* Extra small screens */
+@media (max-width: 480px) {
+  .task-filters {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+  
+  .task-filters .btn {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+  
+  .workify-main {
+    padding: 12px 8px;
+  }
+}
+
+/* TaskList Responsive Styles */
+.list-group-item {
+  padding: 1rem 0;
+}
+
+.list-group-item .badge.small {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+}
+
+@media (max-width: 576px) {
+  .list-group-item {
+    padding: 0.75rem 0;
+  }
+  
+  .list-group-item h6 {
+    font-size: 0.9rem;
+    line-height: 1.3;
+  }
+  
+  .list-group-item .small {
+    font-size: 0.75rem;
+  }
+  
+  .list-group-item .badge.small {
+    font-size: 0.65rem;
+    padding: 0.2rem 0.4rem;
+  }
+  
+  .min-w-0 {
+    min-width: 0;
   }
 }
 

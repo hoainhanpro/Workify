@@ -29,6 +29,26 @@ public class SecurityUtils {
     }
 
     /**
+     * Lấy user ID của user hiện tại từ SecurityContext
+     */
+    public static String getCurrentUserId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new RuntimeException("User not authenticated");
+        }
+
+        if (authentication.getPrincipal() instanceof UserDetails) {
+            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+            return userDetails.getUsername(); // Assuming username is used as userId
+        } else if (authentication.getPrincipal() instanceof String) {
+            return (String) authentication.getPrincipal();
+        }
+
+        throw new RuntimeException("Unable to get current user ID");
+    }
+
+    /**
      * Lấy UserDetails của user hiện tại
      */
     public static Optional<UserDetails> getCurrentUserDetails() {

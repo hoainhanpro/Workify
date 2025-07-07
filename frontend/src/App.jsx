@@ -8,14 +8,24 @@ import Home from './pages/Home'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
+import Tasks from './pages/Tasks'
 import Profile from './pages/Profile'
 import ProtectedRoute from './components/ProtectedRoute'
+import { StagewiseToolbar } from '@stagewise/toolbar-react'
+import { ReactPlugin } from '@stagewise-plugins/react'
 import 'bootstrap/dist/css/bootstrap.min.css'
 
 function App() {
   return (
     <AuthProvider>
       <div className="App">
+        {/* Stagewise Toolbar - only in development mode */}
+        <StagewiseToolbar 
+          config={{
+            plugins: [ReactPlugin]
+          }}
+        />
+        
         <Routes>
           {/* Public Routes */}
           <Route path="/" element={<MainLayout />}>
@@ -40,6 +50,7 @@ function App() {
           }>
             <Route index element={<Navigate to="/workify/dashboard" replace />} />
             <Route path="dashboard" element={<Dashboard />} />
+            <Route path="tasks" element={<Tasks />} />
             <Route path="profile" element={<Profile />} />
           </Route>
           

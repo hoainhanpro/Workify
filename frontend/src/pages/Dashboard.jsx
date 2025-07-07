@@ -1,8 +1,18 @@
 import React from 'react'
+import { Link } from 'react-router-dom'
 import { useAuthContext } from '../context/AuthContext'
+import { useTasks } from '../hooks/useTasks'
+import TaskList from '../components/TaskList'
+import DebugInfo from '../components/DebugInfo'
 
 const Dashboard = () => {
   const { user } = useAuthContext()
+  const { tasks, statistics, loading, error } = useTasks()
+
+  // Get recent tasks (latest 5)
+  const recentTasks = tasks
+    .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
+    .slice(0, 5)
 
   return (
     <div className="dashboard">
@@ -34,14 +44,14 @@ const Dashboard = () => {
             <div className="card-body">
               <div className="d-flex align-items-center">
                 <div className="flex-shrink-0">
-                  <div className="bg-primary bg-opacity-10 rounded-3 p-3">
-                    <i className="bi bi-check2-square text-primary fs-4"></i>
+                  <div className="bg-success bg-opacity-10 rounded-3 p-3">
+                    <i className="bi bi-check2-square text-success fs-4"></i>
                   </div>
                 </div>
                 <div className="flex-grow-1 ms-3">
                   <h6 className="mb-1">Nhiệm vụ hoàn thành</h6>
-                  <h4 className="mb-0">12</h4>
-                  <small className="text-success">+3 hôm nay</small>
+                  <h4 className="mb-0">{loading ? '...' : statistics.completed}</h4>
+                  <small className="text-success">Đã hoàn thành</small>
                 </div>
               </div>
             </div>
@@ -59,8 +69,8 @@ const Dashboard = () => {
                 </div>
                 <div className="flex-grow-1 ms-3">
                   <h6 className="mb-1">Đang thực hiện</h6>
-                  <h4 className="mb-0">5</h4>
-                  <small className="text-muted">Ưu tiên cao: 2</small>
+                  <h4 className="mb-0">{loading ? '...' : statistics.inProgress}</h4>
+                  <small className="text-muted">Đang làm việc</small>
                 </div>
               </div>
             </div>
@@ -72,14 +82,14 @@ const Dashboard = () => {
             <div className="card-body">
               <div className="d-flex align-items-center">
                 <div className="flex-shrink-0">
-                  <div className="bg-info bg-opacity-10 rounded-3 p-3">
-                    <i className="bi bi-journal-text text-info fs-4"></i>
+                  <div className="bg-secondary bg-opacity-10 rounded-3 p-3">
+                    <i className="bi bi-list-task text-secondary fs-4"></i>
                   </div>
                 </div>
                 <div className="flex-grow-1 ms-3">
-                  <h6 className="mb-1">Ghi chú</h6>
-                  <h4 className="mb-0">8</h4>
-                  <small className="text-muted">Cập nhật gần đây</small>
+                  <h6 className="mb-1">Chưa bắt đầu</h6>
+                  <h4 className="mb-0">{loading ? '...' : statistics.todo}</h4>
+                  <small className="text-muted">Cần thực hiện</small>
                 </div>
               </div>
             </div>
@@ -91,14 +101,16 @@ const Dashboard = () => {
             <div className="card-body">
               <div className="d-flex align-items-center">
                 <div className="flex-shrink-0">
-                  <div className="bg-success bg-opacity-10 rounded-3 p-3">
-                    <i className="bi bi-trophy text-success fs-4"></i>
+                  <div className="bg-primary bg-opacity-10 rounded-3 p-3">
+                    <i className="bi bi-trophy text-primary fs-4"></i>
                   </div>
                 </div>
                 <div className="flex-grow-1 ms-3">
-                  <h6 className="mb-1">Hiệu suất</h6>
-                  <h4 className="mb-0">85%</h4>
-                  <small className="text-success">+5% tuần này</small>
+                  <h6 className="mb-1">Tổng nhiệm vụ</h6>
+                  <h4 className="mb-0">{loading ? '...' : statistics.total}</h4>
+                  <small className="text-success">
+                    {statistics.total > 0 ? `${Math.round((statistics.completed / statistics.total) * 100)}% hoàn thành` : 'Chưa có task'}
+                  </small>
                 </div>
               </div>
             </div>
@@ -114,40 +126,17 @@ const Dashboard = () => {
               <h5 className="mb-0">Nhiệm vụ gần đây</h5>
             </div>
             <div className="card-body">
-              <div className="list-group list-group-flush">
-                <div className="list-group-item border-0 px-0">
-                  <div className="d-flex align-items-center">
-                    <input className="form-check-input me-3" type="checkbox" />
-                    <div className="flex-grow-1">
-                      <h6 className="mb-1">Hoàn thiện báo cáo tháng</h6>
-                      <small className="text-muted">Hạn: Hôm nay, 17:00</small>
-                    </div>
-                    <span className="badge bg-danger">Cao</span>
-                  </div>
-                </div>
-                <div className="list-group-item border-0 px-0">
-                  <div className="d-flex align-items-center">
-                    <input className="form-check-input me-3" type="checkbox" />
-                    <div className="flex-grow-1">
-                      <h6 className="mb-1">Review code feature mới</h6>
-                      <small className="text-muted">Hạn: Ngày mai, 10:00</small>
-                    </div>
-                    <span className="badge bg-warning">Trung bình</span>
-                  </div>
-                </div>
-                <div className="list-group-item border-0 px-0">
-                  <div className="d-flex align-items-center">
-                    <input className="form-check-input me-3" type="checkbox" defaultChecked />
-                    <div className="flex-grow-1">
-                      <h6 className="mb-1 text-decoration-line-through text-muted">Cập nhật documentation</h6>
-                      <small className="text-muted">Hoàn thành lúc 14:30</small>
-                    </div>
-                    <span className="badge bg-success">Hoàn thành</span>
-                  </div>
-                </div>
-              </div>
+              <TaskList 
+                tasks={recentTasks} 
+                loading={loading} 
+                error={error}
+                showActions={false}
+              />
               <div className="text-center mt-3">
-                <button className="btn btn-outline-primary">Xem tất cả nhiệm vụ</button>
+                <Link to="/workify/tasks" className="btn btn-outline-primary">
+                  <i className="bi bi-list-ul me-2"></i>
+                  Xem tất cả nhiệm vụ
+                </Link>
               </div>
             </div>
           </div>
@@ -182,6 +171,15 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
+
+      {/* Debug Information - Remove in production */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="row mt-4">
+          <div className="col-12">
+            <DebugInfo />
+          </div>
+        </div>
+      )}
     </div>
   )
 }

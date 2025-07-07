@@ -1,12 +1,14 @@
 # 🚀 Workify - Ứng dụng Quản lý Công việc
 
-Workify là một ứng dụng quản lý công việc hiện đại được xây dựng với Spring Boot backend và React frontend. Ứng dụng cung cấp các tính năng quản lý note, chia sẻ note và tích hợp AI để nâng cao hiệu suất làm việc.
+Workify là một ứng dụng quản lý công việc hiện đại được xây dựng với Spring Boot backend và React frontend. Ứng dụng cung cấp các tính năng quản lý task, note và tích hợp AI để nâng cao hiệu suất làm việc.
 
 ## ✨ Tính năng
 
+- **✅ Quản lý Task**: Tạo, chỉnh sửa, xóa và tổ chức công việc theo trạng thái, độ ưu tiên
 - **📝 Quản lý Note**: Tạo, chỉnh sửa, xóa và tổ chức ghi chú cá nhân
-- **🔗 Chia sẻ Note**: Chia sẻ ghi chú với đồng nghiệp và cộng tác viên
-- **🤖 Tích hợp AI**: Hỗ trợ AI để tạo nội dung và gợi ý thông minh
+- **� Tìm kiếm nâng cao**: Tìm kiếm task theo title, description, tag, status, priority
+- **📊 Thống kê Task**: Xem thống kê task theo trạng thái hoàn thành
+- **🏷️ Tag System**: Gán nhãn cho task để dễ dàng phân loại
 - **👤 Quản lý User**: Đăng ký, đăng nhập và quản lý tài khoản người dùng
 - **🔐 Bảo mật**: Xác thực JWT và phân quyền người dùng
 - **📱 Responsive Design**: Giao diện thân thiện trên mọi thiết bị
@@ -187,6 +189,7 @@ SERVER_PORT=8080
 ## Roadmap
 
 - [✔️] **Authentication & Authorization**: JWT login/logout hoàn chỉnh
+- [✔️]  **Note Management**: GET Task to UI
 - [ ] **Note Management**: CRUD operations cho notes
 - [ ] **Note Sharing**: Chia sẻ và cộng tác trên notes
 - [ ] **AI Integration**: Tích hợp AI để hỗ trợ viết nội dung
