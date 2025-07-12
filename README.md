@@ -188,15 +188,72 @@ SERVER_PORT=8080
 
 ## Roadmap
 
-- [✔️] **Authentication & Authorization**: JWT login/logout hoàn chỉnh
-- [✔️]  **Note Management**: GET Task to UI
-- [ ] **Note Management**: CRUD operations cho notes
-- [ ] **Note Sharing**: Chia sẻ và cộng tác trên notes
-- [ ] **AI Integration**: Tích hợp AI để hỗ trợ viết nội dung
-- [ ] **Real-time Collaboration**: WebSocket cho collaboration
-- [ ] **File Upload**: Upload và quản lý file đính kèm
-- [ ] **Search & Filter**: Tìm kiếm và lọc notes
-- [ ] **Mobile App**: Ứng dụng mobile React Native
+Giai đoạn 1: Cơ bản & Hoạt động cá nhân
+[✔️] Authentication & Authorization - 
+→ Đăng nhập bằng JWT + OAuth2 Google
+
+[✔️] Note Management (View) -  
+→ Hiển thị ghi chú cá nhân từ MongoDB
+
+[✔️] Note Management (CRUD) - 
+→ Tạo / sửa / xóa ghi chú
+
+[✔️]Task Management (CRUD + Subtasks) 
+→ Tạo task chính + subtasks, phân loại mức độ ưu tiên
+
+ File Upload (Local ≤ 5MB) -  
+→ Lưu trữ tệp nhẹ trên server
+
+ Search & Filter
+→ Tìm kiếm task/note theo từ khoá, mức độ, thời gian
+
+⚙️ Giai đoạn 2: Mở rộng không gian làm việc (Workspace)
+[❌] Workspace Creation 
+→ Tạo workspace để làm việc nhóm
+
+[❌] Member Management & Role-Based Access
+→ Mời thành viên, gán quyền (quản lý / thành viên / xem-only)
+
+[❌] Shared Task/Note in Workspace -
+→ Phân công task & note cho các thành viên
+
+[❌] File Upload (Google Drive) -  
+→ Tích hợp Drive API cho lưu trữ file lớn khi người dùng cấp quyền
+
+🤖 Giai đoạn 3: AI & Tích hợp thông minh
+[❌] AI Task Planner (API tích hợp)
+→ Gợi ý nội dung & timeline cho task bằng AI như Gemini, GPT
+
+[❌] AI Summary for Meeting Recordings
+→ Ghi âm + tóm tắt nội dung bằng AI bên thứ ba
+
+[❌] Note Assistant (AI)
+→ Gợi ý nội dung ghi chú hoặc checklist
+
+🔔 Giai đoạn 4: Notification & Lịch
+[❌] Notification System -  
+→ Gửi thông báo qua email, Telegram, hoặc Zalo (tùy cấu hình)
+
+[❌] Push Notification in Web UI -  
+→ Hiện cảnh báo gần deadline, được giao task mới
+
+[❌]Calendar Integration
+→ Tích hợp lịch (FullCalendar UI) để theo dõi task
+
+[❌]Google Calendar Sync (optional)
+→ Đồng bộ task deadline với lịch Google của người dùng
+
+📊 Giai đoạn 5: Theo dõi hiệu suất & báo cáo
+[❌] Progress Chart & Ranking
+→ Biểu đồ mức độ hoàn thành task cá nhân & nhóm
+
+[❌] Activity Log & Audit Trail
+→ Lưu lịch sử thao tác của người dùng
+
+[❌] Dashboard Tổng quan dự án / cá nhân
+→ Xem nhanh trạng thái các workspace/task đang theo dõi
+
+
 
 ## Đóng góp
 
