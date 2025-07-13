@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react'
 import { useAuthContext } from '../context/AuthContext'
 import noteService from '../services/noteService'
+import RichTextEditor from '../components/RichTextEditor'
+import NoteContentDisplay from '../components/NoteContentDisplay'
 
 const Notes = () => {
   const { user } = useAuthContext()
@@ -278,7 +280,7 @@ const Notes = () => {
                       WebkitBoxOrient: 'vertical',
                       overflow: 'hidden'
                     }}>
-                      {note.content}
+                      <NoteContentDisplay content={note.content} isPreview={true} />
                     </p>
                   )}
                   
@@ -319,19 +321,18 @@ const Notes = () => {
                   </div>
                   <div className="mb-3">
                     <label className="form-label">Nội dung</label>
-                    <textarea
-                      className="form-control"
-                      rows="8"
+                    <RichTextEditor
                       value={formData.content}
-                      onChange={(e) => setFormData({...formData, content: e.target.value})}
+                      onChange={(content) => setFormData({...formData, content})}
                       placeholder="Nhập nội dung ghi chú..."
-                    ></textarea>
+                      height="300px"
+                    />
                   </div>
                 </div>
                 <div className="modal-footer">
-                  <button type="button" className="btn btn-secondary" onClick={closeModals}>
+                  {/* <button type="button" className="btn btn-secondary" onClick={closeModals}>
                     Hủy
-                  </button>
+                  </button> */}
                   <button type="submit" className="btn btn-primary">
                     <i className="bi bi-plus-lg me-2"></i>Tạo ghi chú
                   </button>
@@ -366,19 +367,18 @@ const Notes = () => {
                   </div>
                   <div className="mb-3">
                     <label className="form-label">Nội dung</label>
-                    <textarea
-                      className="form-control"
-                      rows="8"
+                    <RichTextEditor
                       value={formData.content}
-                      onChange={(e) => setFormData({...formData, content: e.target.value})}
+                      onChange={(content) => setFormData({...formData, content})}
                       placeholder="Nhập nội dung ghi chú..."
-                    ></textarea>
+                      height="300px"
+                    />
                   </div>
                 </div>
                 <div className="modal-footer">
-                  <button type="button" className="btn btn-secondary" onClick={closeModals}>
+                  {/* <button type="button" className="btn btn-secondary" onClick={closeModals}>
                     Hủy
-                  </button>
+                  </button> */}
                   <button type="submit" className="btn btn-primary">
                     <i className="bi bi-check-lg me-2"></i>Cập nhật
                   </button>

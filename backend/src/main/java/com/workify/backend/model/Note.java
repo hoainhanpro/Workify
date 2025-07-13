@@ -15,7 +15,7 @@ public class Note {
     
     private String title;
     
-    private String content; // Văn bản thuần cho GĐ1
+    private String content; // Hỗ trợ Rich text HTML content (GĐ2)
     
     private String authorId; // ID của người tạo note
     

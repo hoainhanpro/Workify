@@ -9,8 +9,8 @@ public class NoteCreateRequest {
     @Size(max = 200, message = "Tiêu đề không được vượt quá 200 ký tự")
     private String title;
     
-    @Size(max = 10000, message = "Nội dung không được vượt quá 10000 ký tự")
-    private String content;
+    @Size(max = 50000, message = "Nội dung không được vượt quá 50000 ký tự")
+    private String content; // Hỗ trợ rich text HTML content
     
     // Constructors
     public NoteCreateRequest() {}

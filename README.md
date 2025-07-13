@@ -5,7 +5,10 @@ Workify là một ứng dụng quản lý công việc hiện đại được x�
 ## ✨ Tính năng
 
 - **✅ Quản lý Task**: Tạo, chỉnh sửa, xóa và tổ chức công việc theo trạng thái, độ ưu tiên
-- **📝 Quản lý Note**: Tạo, chỉnh sửa, xóa và tổ chức ghi chú cá nhân
+- **📝 Quản lý Note**: Tạo, chỉnh sửa, xóa và tổ chức ghi chú cá nhân với rich text editor
+  - ✅ Định dạng văn bản (bold, italic, underline, header, color)
+  - ✅ Checklist tương tác với checkbox
+  - ✅ Bảng (table) với đầy đủ tính năng chỉnh sửa
 - **� Tìm kiếm nâng cao**: Tìm kiếm task theo title, description, tag, status, priority
 - **📊 Thống kê Task**: Xem thống kê task theo trạng thái hoàn thành
 - **🏷️ Tag System**: Gán nhãn cho task để dễ dàng phân loại
@@ -28,6 +31,8 @@ Workify là một ứng dụng quản lý công việc hiện đại được x�
 - **Vite** - Build tool và dev server
 - **Bootstrap 5** - CSS framework
 - **React Router** - Client-side routing
+- **React Quill** - Rich text editor cho ghi chú
+- **Quill Better Table** - Module table cho rich text editor
 - **Fetch API** - HTTP client
 
 ## Yêu cầu hệ thống
@@ -194,8 +199,8 @@ Giai đoạn 1: Cơ bản & Hoạt động cá nhân
 
 [❌] Note Management (CRUD) - 
     ✔️ Tạo / sửa / xóa ghi chú
-	❌ Rich text editor (In đậm, nghiêng, gạch chân, heading (dùng Tiptap/Quill))
-    ❌ Checklist: Checkbox trong note
+	✔️ Rich text editor (In đậm, nghiêng, gạch chân, heading (dùng Tiptap/Quill))
+    ✔️ Checklist: Checkbox trong note
     ❌ Table trong nội dung của note 
     ❌ Tải lên file (local): Upload file, preview, tải xuống
     ❌ Gắn tag, pin note: Thêm trường tags, isPinned
