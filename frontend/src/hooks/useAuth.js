@@ -8,22 +8,68 @@ const useAuth = () => {
 
   useEffect(() => {
     checkAuth()
+    
+    // Listen for storage changes để maintain auth state across tabs/windows
+    const handleStorageChange = (e) => {
+      if (e.key === 'workify_access_token' || e.key === 'workify_user') {
+        console.log('🔄 Storage changed, re-checking auth...')
+        checkAuth()
+      }
+    }
+    
+    window.addEventListener('storage', handleStorageChange)
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange)
+    }
   }, [])
 
   const checkAuth = async () => {
     try {
-      if (authService.isAuthenticated()) {
-        const userData = authService.getUser()
-        setUser(userData)
-        setIsAuthenticated(true)
-        
-        // Optionally verify token with server
-        // const currentUser = await authService.getCurrentUser()
-        // setUser(currentUser)
+      console.log('🔍 Checking auth state...')
+      const token = localStorage.getItem('workify_access_token')
+      const userData = localStorage.getItem('workify_user')
+      
+      console.log('Token exists:', !!token)
+      console.log('User data exists:', !!userData)
+      
+      if (token && userData) {
+        // Có cả token và user data
+        try {
+          const user = JSON.parse(userData)
+          console.log('✅ User data parsed successfully:', user)
+          setUser(user)
+          setIsAuthenticated(true)
+        } catch (parseError) {
+          console.error('❌ Failed to parse user data:', parseError)
+          // Clear corrupted data
+          localStorage.removeItem('workify_user')
+          setUser(null)
+          setIsAuthenticated(false)
+        }
+      } else if (authService.isAuthenticated()) {
+        // Fallback - có token nhưng không có user data
+        console.log('⚠️ Token exists but no user data, trying authService...')
+        const user = authService.getUser()
+        console.log('User from authService:', user)
+        if (user) {
+          setUser(user)
+          setIsAuthenticated(true)
+        } else {
+          console.log('❌ No user from authService')
+          setUser(null)
+          setIsAuthenticated(false)
+        }
+      } else {
+        console.log('❌ No token or user data')
+        setUser(null)
+        setIsAuthenticated(false)
       }
     } catch (error) {
       console.error('Auth check failed:', error)
-      logout()
+      // Không call logout() để tránh infinite loop
+      setUser(null)
+      setIsAuthenticated(false)
     } finally {
       setLoading(false)
     }
@@ -72,7 +118,9 @@ const useAuth = () => {
     login,
     register,
     logout,
-    checkAuth
+    checkAuth,
+    setUser,
+    setIsAuthenticated
   }
 }
 

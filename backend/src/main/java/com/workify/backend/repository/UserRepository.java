@@ -1,12 +1,13 @@
 package com.workify.backend.repository;
 
-import com.workify.backend.model.User;
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
-import java.util.Optional;
+import com.workify.backend.model.User;
 
 @Repository
 public interface UserRepository extends MongoRepository<User, String> {
@@ -26,6 +27,9 @@ public interface UserRepository extends MongoRepository<User, String> {
 
     // Check if email exists
     boolean existsByEmail(String email);
+
+    // Find user by Google ID
+    Optional<User> findByGoogleId(String googleId);
 
     // Find users by role
     List<User> findByRole(String role);

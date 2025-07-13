@@ -1,15 +1,16 @@
 package com.workify.backend.model;
 
-import org.springframework.data.annotation.Id;
+import java.time.LocalDateTime;
+
 import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
-import java.time.LocalDateTime;
 
 @Document(collection = "users")
 public class User {
@@ -27,7 +28,7 @@ public class User {
     @Indexed(unique = true)
     private String email;
 
-    @NotBlank(message = "Password cannot be blank")
+    // Password is optional for OAuth users
     @Size(min = 6, message = "Password must be at least 6 characters")
     private String password;
 
@@ -38,6 +39,13 @@ public class User {
     private String role = "USER"; // USER, ADMIN
 
     private boolean enabled = true;
+
+    // OAuth fields
+    private String authProvider = "LOCAL"; // LOCAL, GOOGLE, FACEBOOK
+    
+    private String googleId; // Google user ID
+    
+    private String profilePicture; // URL ảnh đại diện
 
     @CreatedDate
     private LocalDateTime createdAt;
@@ -128,6 +136,30 @@ public class User {
         this.updatedAt = updatedAt;
     }
 
+    public String getAuthProvider() {
+        return authProvider;
+    }
+
+    public void setAuthProvider(String authProvider) {
+        this.authProvider = authProvider;
+    }
+
+    public String getGoogleId() {
+        return googleId;
+    }
+
+    public void setGoogleId(String googleId) {
+        this.googleId = googleId;
+    }
+
+    public String getProfilePicture() {
+        return profilePicture;
+    }
+
+    public void setProfilePicture(String profilePicture) {
+        this.profilePicture = profilePicture;
+    }
+
     @Override
     public String toString() {
         return "User{" +
@@ -137,8 +169,12 @@ public class User {
                 ", fullName='" + fullName + '\'' +
                 ", role='" + role + '\'' +
                 ", enabled=" + enabled +
+                ", authProvider='" + authProvider + '\'' +
+                ", googleId='" + googleId + '\'' +
+                ", profilePicture='" + profilePicture + '\'' +
                 ", createdAt=" + createdAt +
                 ", updatedAt=" + updatedAt +
                 '}';
     }
 } 
+

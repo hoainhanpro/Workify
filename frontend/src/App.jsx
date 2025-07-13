@@ -9,7 +9,10 @@ import Login from './pages/Login'
 import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
 import Tasks from './pages/Tasks'
+import Notes from './pages/Notes'
 import Profile from './pages/Profile'
+import GoogleCallback from './pages/GoogleCallback'
+import GoogleLinkCallback from './pages/GoogleLinkCallback'
 import ProtectedRoute from './components/ProtectedRoute'
 import { StagewiseToolbar } from '@stagewise/toolbar-react'
 import { ReactPlugin } from '@stagewise-plugins/react'
@@ -36,6 +39,8 @@ function App() {
           <Route path="/auth" element={<AuthLayout />}>
             <Route path="login" element={<Login />} />
             <Route path="register" element={<Register />} />
+            <Route path="google/callback" element={<GoogleCallback />} />
+            <Route path="google/link-callback" element={<GoogleLinkCallback />} />
           </Route>
           
           {/* Legacy routes redirect */}
@@ -51,6 +56,7 @@ function App() {
             <Route index element={<Navigate to="/workify/dashboard" replace />} />
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="tasks" element={<Tasks />} />
+            <Route path="notes" element={<Notes />} />
             <Route path="profile" element={<Profile />} />
           </Route>
           

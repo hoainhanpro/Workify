@@ -1,7 +1,8 @@
 package com.workify.backend.dto;
 
-import com.workify.backend.model.User;
 import java.time.LocalDateTime;
+
+import com.workify.backend.model.User;
 
 public class UserResponse {
 
@@ -13,6 +14,11 @@ public class UserResponse {
     private boolean enabled;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    
+    // OAuth fields
+    private String authProvider;
+    private String googleId;
+    private String profilePicture;
 
     // Constructors
     public UserResponse() {}
@@ -26,6 +32,9 @@ public class UserResponse {
         this.enabled = user.isEnabled();
         this.createdAt = user.getCreatedAt();
         this.updatedAt = user.getUpdatedAt();
+        this.authProvider = user.getAuthProvider();
+        this.googleId = user.getGoogleId();
+        this.profilePicture = user.getProfilePicture();
     }
 
     // Getters and Setters
@@ -91,5 +100,29 @@ public class UserResponse {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public String getAuthProvider() {
+        return authProvider;
+    }
+
+    public void setAuthProvider(String authProvider) {
+        this.authProvider = authProvider;
+    }
+
+    public String getGoogleId() {
+        return googleId;
+    }
+
+    public void setGoogleId(String googleId) {
+        this.googleId = googleId;
+    }
+
+    public String getProfilePicture() {
+        return profilePicture;
+    }
+
+    public void setProfilePicture(String profilePicture) {
+        this.profilePicture = profilePicture;
     }
 } 

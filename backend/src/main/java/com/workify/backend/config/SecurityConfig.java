@@ -39,6 +39,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(authz -> authz
                 // Public endpoints - no authentication required
                 .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/refresh").permitAll()
+                .requestMatchers("/api/oauth/**").permitAll() // OAuth endpoints
                 .requestMatchers("/api/users/exists").permitAll() // Check username/email exists
                 .requestMatchers("/api/test/public").permitAll() // Test public endpoint
                 .requestMatchers("/api/health/**").permitAll() // Health check endpoints
@@ -47,6 +48,9 @@ public class SecurityConfig {
                 // Admin only endpoints
                 .requestMatchers("/api/users/**", "/api/test/admin").hasRole("ADMIN")
                 .requestMatchers("/api/test/user").hasRole("USER")
+                
+                // Note endpoints - require authentication
+                .requestMatchers("/api/notes/**").hasAnyRole("USER", "ADMIN")
                 
                 // Authenticated endpoints
                 .requestMatchers("/api/auth/**", "/api/test/protected").hasAnyRole("USER", "ADMIN")
