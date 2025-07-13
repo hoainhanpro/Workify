@@ -6,6 +6,8 @@ import RichTextEditor from '../components/RichTextEditor'
 import NoteContentDisplay from '../components/NoteContentDisplay'
 import TagSelector from '../components/TagSelector'
 import TagDisplay from '../components/TagDisplay'
+import FileUpload from '../components/FileUpload'
+import FileList from '../components/FileList'
 import '../styles/TagSelector.css'
 
 const Notes = () => {
@@ -27,6 +29,10 @@ const Notes = () => {
     tagIds: [],
     isPinned: false
   })
+  
+  // GĐ7: File upload states
+  const [fileRefreshTrigger, setFileRefreshTrigger] = useState(0)
+  const [showFileUpload, setShowFileUpload] = useState(false)
 
   // Load notes khi component mount
   useEffect(() => {
@@ -151,6 +157,29 @@ const Notes = () => {
       console.error('Error deleting note:', error)
       alert(error.message || 'Lỗi khi xóa ghi chú')
     }
+  }
+
+  // GĐ7: File upload handlers
+  const handleFileUploadSuccess = (result) => {
+    alert(result.message || 'Upload file thành công!')
+    setFileRefreshTrigger(prev => prev + 1)
+    // Refresh notes để cập nhật attachments
+    loadNotes()
+  }
+
+  const handleFileUploadError = (errorMessage) => {
+    alert('Lỗi upload file: ' + errorMessage)
+  }
+
+  const handleFileDeleted = (fileName) => {
+    alert(`Đã xóa file "${fileName}" thành công!`)
+    setFileRefreshTrigger(prev => prev + 1)
+    // Refresh notes để cập nhật attachments
+    loadNotes()
+  }
+
+  const handleFileError = (errorMessage) => {
+    alert('Lỗi file: ' + errorMessage)
   }
 
   const handleSearch = async () => {
@@ -420,6 +449,16 @@ const Notes = () => {
                     </p>
                   )}
                   
+                  {/* GĐ7: File attachments indicator */}
+                  {note.attachments && note.attachments.length > 0 && (
+                    <div className="mb-2">
+                      <small className="text-info">
+                        <i className="bi bi-paperclip me-1"></i>
+                        {note.attachments.length} file đính kèm
+                      </small>
+                    </div>
+                  )}
+                  
                   <div className="mt-auto">
                     <small className="text-muted">
                       <i className="bi bi-clock me-1"></i>
@@ -534,6 +573,7 @@ const Notes = () => {
                       onChange={(content) => setFormData({...formData, content})}
                       placeholder="Nhập nội dung ghi chú..."
                       height="300px"
+                      noteId={selectedNote?.id}
                     />
                   </div>
                   
@@ -561,6 +601,36 @@ const Notes = () => {
                         <i className="bi bi-pin-angle me-1"></i>Ghim ghi chú này
                       </label>
                     </div>
+                  </div>
+                  
+                  {/* GĐ7: File attachments */}
+                  <div className="mb-3">
+                    <div className="d-flex justify-content-between align-items-center mb-2">
+                      <label className="form-label">File đính kèm</label>
+                      <button
+                        type="button"
+                        className="btn btn-outline-primary btn-sm"
+                        onClick={() => setShowFileUpload(!showFileUpload)}
+                      >
+                        <i className="bi bi-paperclip me-1"></i>
+                        {showFileUpload ? 'Ẩn upload' : 'Thêm file'}
+                      </button>
+                    </div>
+                    
+                    {showFileUpload && (
+                      <FileUpload
+                        noteId={selectedNote.id}
+                        onUploadSuccess={handleFileUploadSuccess}
+                        onUploadError={handleFileUploadError}
+                      />
+                    )}
+                    
+                    <FileList
+                      noteId={selectedNote.id}
+                      refreshTrigger={fileRefreshTrigger}
+                      onFileDeleted={handleFileDeleted}
+                      onError={handleFileError}
+                    />
                   </div>
                 </div>
                 <div className="modal-footer">

@@ -1,5 +1,6 @@
 package com.workify.backend.controller;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,11 +20,15 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.workify.backend.dto.NoteCreateRequest;
 import com.workify.backend.dto.NoteResponse;
 import com.workify.backend.dto.NoteUpdateRequest;
 import com.workify.backend.dto.TagResponse;
+import com.workify.backend.model.Attachment;
+import com.workify.backend.model.Note;
+import com.workify.backend.service.FileStorageService;
 import com.workify.backend.service.NoteService;
 import com.workify.backend.service.TagService;
 
@@ -40,6 +45,9 @@ public class NoteController {
     
     @Autowired
     private TagService tagService;
+    
+    @Autowired
+    private FileStorageService fileStorageService;
     
     /**
      * Tạo note mới
@@ -494,6 +502,160 @@ public class NoteController {
             response.put("success", false);
             response.put("message", "Lỗi khi tìm kiếm notes theo tags: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+    
+    /**
+     * GĐ7: Upload files cho note (giới hạn 5MB/note)
+     */
+    @PostMapping("/{noteId}/upload")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    public ResponseEntity<Map<String, Object>> uploadFiles(
+            @PathVariable String noteId,
+            @RequestParam("files") List<MultipartFile> files,
+            HttpServletRequest httpRequest) {
+        
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            String userId = (String) httpRequest.getAttribute("userId");
+            
+            if (userId == null) {
+                response.put("success", false);
+                response.put("message", "Không xác định được user");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+            }
+            
+            if (files == null || files.isEmpty()) {
+                response.put("success", false);
+                response.put("message", "Không có file nào được chọn");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+            }
+            
+            Note updatedNote = noteService.uploadFiles(noteId, userId, files);
+            
+            response.put("success", true);
+            response.put("message", "Upload thành công " + files.size() + " file(s)");
+            response.put("data", updatedNote);
+            return ResponseEntity.ok(response);
+            
+        } catch (IllegalArgumentException e) {
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        } catch (IOException e) {
+            response.put("success", false);
+            response.put("message", "Lỗi upload file: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Lỗi hệ thống: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+    
+    /**
+     * GĐ7: Lấy danh sách file của note
+     */
+    @GetMapping("/{noteId}/files")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    public ResponseEntity<Map<String, Object>> getNoteFiles(
+            @PathVariable String noteId,
+            HttpServletRequest httpRequest) {
+        
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            String userId = (String) httpRequest.getAttribute("userId");
+            
+            if (userId == null) {
+                response.put("success", false);
+                response.put("message", "Không xác định được user");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+            }
+            
+            List<Attachment> files = noteService.getNoteFiles(noteId, userId);
+            
+            response.put("success", true);
+            response.put("data", files);
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Lỗi khi lấy danh sách file: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+    
+    /**
+     * GĐ7: Xóa file khỏi note
+     */
+    @DeleteMapping("/{noteId}/files/{fileName}")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    public ResponseEntity<Map<String, Object>> deleteFileFromNote(
+            @PathVariable String noteId,
+            @PathVariable String fileName,
+            HttpServletRequest httpRequest) {
+        
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            String userId = (String) httpRequest.getAttribute("userId");
+            
+            if (userId == null) {
+                response.put("success", false);
+                response.put("message", "Không xác định được user");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+            }
+            
+            Note updatedNote = noteService.deleteFileFromNote(noteId, userId, fileName);
+            
+            response.put("success", true);
+            response.put("message", "Xóa file thành công");
+            response.put("data", updatedNote);
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Lỗi khi xóa file: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+    
+    /**
+     * GĐ7: Download file attachment
+     */
+    @GetMapping("/{noteId}/files/{fileName}/download")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    public ResponseEntity<byte[]> downloadFile(
+            @PathVariable String noteId,
+            @PathVariable String fileName,
+            HttpServletRequest httpRequest) {
+        
+        try {
+            String userId = (String) httpRequest.getAttribute("userId");
+            
+            if (userId == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+            
+            // Lấy thông tin file
+            Attachment fileInfo = noteService.getFileInfo(noteId, userId, fileName);
+            
+            // Lấy nội dung file
+            byte[] fileContent = noteService.getFileContent(noteId, userId, fileName);
+            
+            // Lấy content type
+            String contentType = fileStorageService.getContentType(fileName);
+            
+            return ResponseEntity.ok()
+                    .header("Content-Type", contentType)
+                    .header("Content-Length", String.valueOf(fileContent.length))
+                    .header("Content-Disposition", "attachment; filename=\"" + fileInfo.getFileName() + "\"")
+                    .body(fileContent);
+            
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
     }
 }

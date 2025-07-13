@@ -1,17 +1,22 @@
 package com.workify.backend.service;
 
+import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.workify.backend.dto.NoteCreateRequest;
 import com.workify.backend.dto.NoteResponse;
 import com.workify.backend.dto.NoteUpdateRequest;
 import com.workify.backend.dto.TagResponse;
+import com.workify.backend.model.Attachment;
 import com.workify.backend.model.Note;
 import com.workify.backend.repository.NoteRepository;
 
@@ -23,6 +28,9 @@ public class NoteService {
     
     @Autowired
     private TagService tagService;
+    
+    @Autowired
+    private FileStorageService fileStorageService;
     
     /**
      * Tạo note mới
@@ -259,5 +267,143 @@ public class NoteService {
         return userTags.stream()
                 .map(TagResponse::getName)
                 .collect(Collectors.toList());
+    }
+    
+    /**
+     * GĐ7: Upload file cho note với kiểm tra giới hạn 5MB
+     */
+    public Note uploadFiles(String noteId, String authorId, List<MultipartFile> files) throws IOException {
+        // Tìm note
+        Note note = noteRepository.findById(noteId)
+                .orElseThrow(() -> new RuntimeException("Note không tồn tại"));
+        
+        // Kiểm tra quyền
+        if (!note.getAuthorId().equals(authorId)) {
+            throw new RuntimeException("Không có quyền upload file cho note này");
+        }
+        
+        // Tính tổng dung lượng hiện tại
+        long currentTotalSize = fileStorageService.calculateTotalSize(note.getAttachments());
+        
+        // Tính tổng dung lượng file mới
+        long newFilesTotalSize = files.stream()
+                .mapToLong(MultipartFile::getSize)
+                .sum();
+        
+        // Kiểm tra giới hạn 5MB
+        fileStorageService.validateTotalFileSize(currentTotalSize, newFilesTotalSize);
+        
+        // Upload từng file
+        List<Attachment> newAttachments = new ArrayList<>();
+        for (MultipartFile file : files) {
+            try {
+                Attachment attachment = fileStorageService.uploadFile(file, authorId);
+                newAttachments.add(attachment);
+            } catch (Exception e) {
+                // Rollback: xóa các file đã upload thành công
+                for (Attachment uploaded : newAttachments) {
+                    fileStorageService.deleteFile(uploaded.getFileUrl());
+                }
+                throw new RuntimeException("Lỗi upload file: " + e.getMessage(), e);
+            }
+        }
+        
+        // Thêm attachments vào note
+        note.getAttachments().addAll(newAttachments);
+        note.setUpdatedAt(LocalDateTime.now());
+        
+        return noteRepository.save(note);
+    }
+    
+    /**
+     * GĐ7: Xóa file khỏi note
+     */
+    public Note deleteFileFromNote(String noteId, String authorId, String fileName) {
+        // Tìm note
+        Note note = noteRepository.findById(noteId)
+                .orElseThrow(() -> new RuntimeException("Note không tồn tại"));
+        
+        // Kiểm tra quyền
+        if (!note.getAuthorId().equals(authorId)) {
+            throw new RuntimeException("Không có quyền xóa file trong note này");
+        }
+        
+        // Tìm và xóa attachment
+        Iterator<Attachment> iterator = note.getAttachments().iterator();
+        boolean found = false;
+        
+        while (iterator.hasNext()) {
+            Attachment attachment = iterator.next();
+            if (attachment.getFileName().equals(fileName)) {
+                // Xóa file khỏi storage
+                fileStorageService.deleteFile(attachment.getFileUrl());
+                
+                // Xóa khỏi list
+                iterator.remove();
+                found = true;
+                break;
+            }
+        }
+        
+        if (!found) {
+            throw new RuntimeException("File không tồn tại trong note");
+        }
+        
+        note.setUpdatedAt(LocalDateTime.now());
+        return noteRepository.save(note);
+    }
+    
+    /**
+     * GĐ7: Lấy thông tin file của note
+     */
+    public List<Attachment> getNoteFiles(String noteId, String authorId) {
+        Note note = noteRepository.findById(noteId)
+                .orElseThrow(() -> new RuntimeException("Note không tồn tại"));
+        
+        if (!note.getAuthorId().equals(authorId)) {
+            throw new RuntimeException("Không có quyền xem file trong note này");
+        }
+        
+        return note.getAttachments();
+    }
+    
+    /**
+     * GĐ7+: Lấy file để hiển thị (cho ảnh trong editor)
+     */
+    public byte[] getFileContent(String noteId, String authorId, String fileName) throws IOException {
+        // Tìm note
+        Note note = noteRepository.findById(noteId)
+                .orElseThrow(() -> new RuntimeException("Note không tồn tại"));
+        
+        // Kiểm tra quyền
+        if (!note.getAuthorId().equals(authorId)) {
+            throw new RuntimeException("Không có quyền xem file trong note này");
+        }
+        
+        // Tìm attachment
+        Attachment attachment = note.getAttachments().stream()
+                .filter(att -> att.getFileName().equals(fileName))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("File không tồn tại"));
+        
+        // Đọc file từ storage
+        return fileStorageService.readFileContent(attachment.getFileUrl());
+    }
+    
+    /**
+     * GĐ7+: Lấy thông tin file (content type, etc.)
+     */
+    public Attachment getFileInfo(String noteId, String authorId, String fileName) {
+        Note note = noteRepository.findById(noteId)
+                .orElseThrow(() -> new RuntimeException("Note không tồn tại"));
+        
+        if (!note.getAuthorId().equals(authorId)) {
+            throw new RuntimeException("Không có quyền xem file trong note này");
+        }
+        
+        return note.getAttachments().stream()
+                .filter(att -> att.getFileName().equals(fileName))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("File không tồn tại"));
     }
 }

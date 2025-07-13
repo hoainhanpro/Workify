@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef } from 'react'
 import ReactQuill, { Quill } from 'react-quill'
 import 'react-quill/dist/quill.snow.css'
 import '../styles/RichTextEditor.css'
+import { uploadImageToNote } from '../services/fileService'
 
 // 1. Define Custom Blots for Table, TableRow, TableCell - TẠMTHỜI DISABLE
 // const Block = Quill.import('blots/block')
@@ -39,7 +40,7 @@ import '../styles/RichTextEditor.css'
 //   'formats/table': Table,
 // }, true)
 
-const RichTextEditor = ({ value, onChange, placeholder = "Nhập nội dung...", height = "200px" }) => {
+const RichTextEditor = ({ value, onChange, placeholder = "Nhập nội dung...", height = "200px", noteId = null }) => {
   const quillRef = useRef(null)
   
   // Register modules
@@ -93,6 +94,46 @@ const RichTextEditor = ({ value, onChange, placeholder = "Nhập nội dung...",
     setTimeout(addTooltips, 100)
   }, [])
 
+  // Image upload handler
+  const handleImageUpload = async () => {
+    if (!noteId) {
+      alert('Cần lưu note trước khi thêm ảnh');
+      return;
+    }
+
+    const input = document.createElement('input');
+    input.setAttribute('type', 'file');
+    input.setAttribute('accept', 'image/*');
+    input.click();
+
+    input.onchange = async () => {
+      const file = input.files[0];
+      if (!file) return;
+
+      const quill = quillRef.current.getEditor();
+      const range = quill.getSelection(true);
+
+      // Show loading
+      quill.insertEmbed(range.index, 'image', 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iOCIgY3k9IjgiIHI9IjciIHN0cm9rZT0iIzk5OSIgc3Ryb2tlLXdpZHRoPSIyIiBmaWxsPSJub25lIi8+CjxyZWN0IHg9IjUiIHk9IjUiIHdpZHRoPSI2IiBoZWlnaHQ9IjYiIGZpbGw9IiM5OTkiLz4KPC9zdmc+');
+      quill.setSelection(range.index + 1);
+
+      try {
+        const result = await uploadImageToNote(noteId, file);
+        
+        if (result.success) {
+          // Replace loading with actual image
+          quill.deleteText(range.index, 1);
+          quill.insertEmbed(range.index, 'image', result.imageUrl);
+          quill.setSelection(range.index + 1);
+        }
+      } catch (error) {
+        // Remove loading image on error
+        quill.deleteText(range.index, 1);
+        alert('Lỗi upload ảnh: ' + error.message);
+      }
+    };
+  };
+
   // Cấu hình toolbar với Custom Blots
   const modules = useMemo(() => ({
     toolbar: {
@@ -103,11 +144,12 @@ const RichTextEditor = ({ value, onChange, placeholder = "Nhập nội dung...",
         [{ 'list': 'ordered'}, { 'list': 'bullet' }, { 'list': 'check' }],
         [{ 'indent': '-1'}, { 'indent': '+1' }],
         [{ 'align': [] }],
-        ['link', 'blockquote', 'code-block'],
+        ['link', 'image', 'blockquote', 'code-block'],
         // ['insertTable'], // TẠMTHỜI DISABLE TABLE
         ['clean']
       ],
       handlers: {
+        'image': handleImageUpload,
         // TẠMTHỜI DISABLE TABLE HANDLER
         // 'insertTable': function() {
         //   const rows = prompt('Nhập số hàng (1-10):', '3')
@@ -145,15 +187,14 @@ const RichTextEditor = ({ value, onChange, placeholder = "Nhập nội dung...",
         //   this.quill.updateContents(delta, Quill.sources.USER)
         //   // Move the cursor to the first cell of the newly inserted table
         //   this.quill.setSelection(range.index + 2)
-        // }
       }
     }
-  }), [])
+  }), [noteId])
 
   const formats = [
     'header', 'bold', 'italic', 'underline', 'strike',
     'color', 'background', 'list', 'bullet', 'check', 'indent',
-    'align', 'link', 'blockquote', 'code-block'
+    'align', 'link', 'image', 'blockquote', 'code-block'
     // 'table', 'table-row', 'table-cell' // TẠMTHỜI DISABLE TABLE FORMATS
   ]
 

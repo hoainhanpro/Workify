@@ -25,6 +25,8 @@ public class Note {
     
     private Boolean isPinned = false; // GĐ5: Đánh dấu note được ghim
     
+    private List<Attachment> attachments = new ArrayList<>(); // GĐ7: Danh sách file đính kèm
+    
     @CreatedDate
     private LocalDateTime createdAt;
     
@@ -40,6 +42,7 @@ public class Note {
         this.authorId = authorId;
         this.tagIds = new ArrayList<>();
         this.isPinned = false;
+        this.attachments = new ArrayList<>(); // GĐ7: Khởi tạo danh sách attachments
     }
     
     // Getters and Setters
@@ -93,6 +96,15 @@ public class Note {
         this.isPinned = isPinned != null ? isPinned : false;
     }
     
+    // GĐ7: Getter và Setter cho attachments
+    public List<Attachment> getAttachments() {
+        return attachments;
+    }
+    
+    public void setAttachments(List<Attachment> attachments) {
+        this.attachments = attachments != null ? attachments : new ArrayList<>();
+    }
+
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
@@ -118,6 +130,7 @@ public class Note {
                 ", authorId='" + authorId + '\'' +
                 ", tagIds=" + tagIds +
                 ", isPinned=" + isPinned +
+                ", attachments=" + attachments +
                 ", createdAt=" + createdAt +
                 ", updatedAt=" + updatedAt +
                 '}';
