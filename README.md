@@ -192,20 +192,21 @@ Giai đoạn 1: Cơ bản & Hoạt động cá nhân
 [✔️] Authentication & Authorization - 
 → Đăng nhập bằng JWT + OAuth2 Google
 
-[✔️] Note Management (View) -  
-→ Hiển thị ghi chú cá nhân từ MongoDB
+[❌] Note Management (CRUD) - 
+    ✔️ Tạo / sửa / xóa ghi chú
+	❌ Rich text editor (In đậm, nghiêng, gạch chân, heading (dùng Tiptap/Quill))
+    ❌ Checklist: Checkbox trong note
+    ❌ Table trong nội dung của note 
+    ❌ Tải lên file (local): Upload file, preview, tải xuống
+    ❌ Gắn tag, pin note: Thêm trường tags, isPinned
+    ❌ Tìm kiếm, filter note: Tìm theo keyword, tag
+    ❌ Export note (PDF, HTML): Export nội dung ghi chú
 
-[✔️] Note Management (CRUD) - 
-→ Tạo / sửa / xóa ghi chú
-
-[✔️]Task Management (CRUD + Subtasks) 
+[✔️] Task Management (CRUD + Subtasks) 
 → Tạo task chính + subtasks, phân loại mức độ ưu tiên
 
- File Upload (Local ≤ 5MB) -  
-→ Lưu trữ tệp nhẹ trên server
-
- Search & Filter
-→ Tìm kiếm task/note theo từ khoá, mức độ, thời gian
+[❌] Search & Filter
+→ Tìm kiếm task theo từ khoá, mức độ, thời gian
 
 ⚙️ Giai đoạn 2: Mở rộng không gian làm việc (Workspace)
 [❌] Workspace Creation 
@@ -217,8 +218,10 @@ Giai đoạn 1: Cơ bản & Hoạt động cá nhân
 [❌] Shared Task/Note in Workspace -
 → Phân công task & note cho các thành viên
 
-[❌] File Upload (Google Drive) -  
-→ Tích hợp Drive API cho lưu trữ file lớn khi người dùng cấp quyền
+[❌] Note Management Advance 1 - 
+    ❌ Uploadfile: Tích hợp Drive API cho lưu trữ file lớn khi người dùng cấp quyền
+    ❌ Chia sẻ note (workspace): Chia sẻ quyền xem/sửa note
+    ❌ Lưu lịch sử chỉnh sửa: Versioning hoặc undo/redo
 
 🤖 Giai đoạn 3: AI & Tích hợp thông minh
 [❌] AI Task Planner (API tích hợp)
@@ -228,7 +231,7 @@ Giai đoạn 1: Cơ bản & Hoạt động cá nhân
 → Ghi âm + tóm tắt nội dung bằng AI bên thứ ba
 
 [❌] Note Assistant (AI)
-→ Gợi ý nội dung ghi chú hoặc checklist
+    ❌ Tích hợp AI tóm tắt: Gửi nội dung note đến AI, nhận tóm tắt
 
 🔔 Giai đoạn 4: Notification & Lịch
 [❌] Notification System -  
