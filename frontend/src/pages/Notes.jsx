@@ -1,0 +1,395 @@
+import React, { useState, useEffect } from 'react'
+import { useAuthContext } from '../context/AuthContext'
+import noteService from '../services/noteService'
+
+const Notes = () => {
+  const { user } = useAuthContext()
+  const [notes, setNotes] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [selectedNote, setSelectedNote] = useState(null)
+  const [searchKeyword, setSearchKeyword] = useState('')
+  const [noteStats, setNoteStats] = useState(null)
+  const [formData, setFormData] = useState({
+    title: '',
+    content: ''
+  })
+
+  // Load notes khi component mount
+  useEffect(() => {
+    loadNotes()
+    loadNoteStats()
+  }, [])
+
+  const loadNotes = async () => {
+    try {
+      setLoading(true)
+      const response = await noteService.getAllNotes()
+      if (response.success) {
+        setNotes(response.data || [])
+      }
+    } catch (error) {
+      console.error('Error loading notes:', error)
+      alert('Lỗi khi tải danh sách ghi chú')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const loadNoteStats = async () => {
+    try {
+      const response = await noteService.getNoteStats()
+      if (response.success) {
+        setNoteStats(response.data)
+      }
+    } catch (error) {
+      console.error('Error loading stats:', error)
+    }
+  }
+
+  const handleCreateNote = async (e) => {
+    e.preventDefault()
+    
+    if (!formData.title.trim()) {
+      alert('Vui lòng nhập tiêu đề ghi chú')
+      return
+    }
+
+    try {
+      const response = await noteService.createNote(formData)
+      if (response.success) {
+        setNotes([response.data, ...notes])
+        setFormData({ title: '', content: '' })
+        setShowCreateModal(false)
+        loadNoteStats()
+        alert('Tạo ghi chú thành công!')
+      }
+    } catch (error) {
+      console.error('Error creating note:', error)
+      alert(error.message || 'Lỗi khi tạo ghi chú')
+    }
+  }
+
+  const handleEditNote = async (e) => {
+    e.preventDefault()
+    
+    if (!formData.title.trim()) {
+      alert('Vui lòng nhập tiêu đề ghi chú')
+      return
+    }
+
+    try {
+      const response = await noteService.updateNote(selectedNote.id, formData)
+      if (response.success) {
+        setNotes(notes.map(note => 
+          note.id === selectedNote.id ? response.data : note
+        ))
+        setFormData({ title: '', content: '' })
+        setSelectedNote(null)
+        setShowEditModal(false)
+        alert('Cập nhật ghi chú thành công!')
+      }
+    } catch (error) {
+      console.error('Error updating note:', error)
+      alert(error.message || 'Lỗi khi cập nhật ghi chú')
+    }
+  }
+
+  const handleDeleteNote = async (noteId) => {
+    if (!window.confirm('Bạn có chắc muốn xóa ghi chú này?')) {
+      return
+    }
+
+    try {
+      const response = await noteService.deleteNote(noteId)
+      if (response.success) {
+        setNotes(notes.filter(note => note.id !== noteId))
+        loadNoteStats()
+        alert('Xóa ghi chú thành công!')
+      }
+    } catch (error) {
+      console.error('Error deleting note:', error)
+      alert(error.message || 'Lỗi khi xóa ghi chú')
+    }
+  }
+
+  const handleSearch = async () => {
+    if (!searchKeyword.trim()) {
+      loadNotes()
+      return
+    }
+
+    try {
+      setLoading(true)
+      const response = await noteService.searchNotes(searchKeyword)
+      if (response.success) {
+        setNotes(response.data || [])
+      }
+    } catch (error) {
+      console.error('Error searching notes:', error)
+      alert('Lỗi khi tìm kiếm ghi chú')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const openEditModal = (note) => {
+    setSelectedNote(note)
+    setFormData({
+      title: note.title,
+      content: note.content || ''
+    })
+    setShowEditModal(true)
+  }
+
+  const closeModals = () => {
+    setShowCreateModal(false)
+    setShowEditModal(false)
+    setSelectedNote(null)
+    setFormData({ title: '', content: '' })
+  }
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleString('vi-VN')
+  }
+
+  return (
+    <div className="notes-page">
+      {/* Header */}
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <div>
+          <h1 className="h3 mb-1">Ghi chú</h1>
+          <p className="text-muted mb-0">
+            Tạo và quản lý ghi chú cá nhân
+            {noteStats && (
+              <span className="ms-2 badge bg-primary">{noteStats.totalNotes} ghi chú</span>
+            )}
+          </p>
+        </div>
+        <button 
+          className="btn btn-primary"
+          onClick={() => setShowCreateModal(true)}
+        >
+          <i className="bi bi-plus-lg me-2"></i>
+          Tạo ghi chú mới
+        </button>
+      </div>
+
+      {/* Search */}
+      <div className="row mb-4">
+        <div className="col-md-6">
+          <div className="input-group">
+            <input
+              type="text"
+              className="form-control"
+              placeholder="Tìm kiếm ghi chú..."
+              value={searchKeyword}
+              onChange={(e) => setSearchKeyword(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+            />
+            <button 
+              className="btn btn-outline-secondary"
+              onClick={handleSearch}
+            >
+              <i className="bi bi-search"></i>
+            </button>
+            {searchKeyword && (
+              <button 
+                className="btn btn-outline-secondary"
+                onClick={() => {
+                  setSearchKeyword('')
+                  loadNotes()
+                }}
+              >
+                <i className="bi bi-x-lg"></i>
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Notes List */}
+      {loading ? (
+        <div className="text-center py-5">
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </div>
+          <p className="mt-2 text-muted">Đang tải ghi chú...</p>
+        </div>
+      ) : notes.length === 0 ? (
+        <div className="text-center py-5">
+          <i className="bi bi-journal-text text-muted" style={{ fontSize: '4rem' }}></i>
+          <h5 className="mt-3 text-muted">
+            {searchKeyword ? 'Không tìm thấy ghi chú nào' : 'Chưa có ghi chú nào'}
+          </h5>
+          <p className="text-muted">
+            {searchKeyword ? 'Thử tìm kiếm với từ khóa khác' : 'Bắt đầu tạo ghi chú đầu tiên của bạn'}
+          </p>
+        </div>
+      ) : (
+        <div className="row">
+          {notes.map((note) => (
+            <div key={note.id} className="col-lg-6 col-xl-4 mb-4">
+              <div className="card h-100 border-0 shadow-sm">
+                <div className="card-body">
+                  <div className="d-flex justify-content-between align-items-start mb-3">
+                    <h6 className="card-title mb-0 flex-grow-1" style={{ 
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden'
+                    }}>
+                      {note.title}
+                    </h6>
+                    <div className="dropdown">
+                      <button 
+                        className="btn btn-sm btn-outline-secondary border-0"
+                        data-bs-toggle="dropdown"
+                      >
+                        <i className="bi bi-three-dots-vertical"></i>
+                      </button>
+                      <ul className="dropdown-menu">
+                        <li>
+                          <button 
+                            className="dropdown-item"
+                            onClick={() => openEditModal(note)}
+                          >
+                            <i className="bi bi-pencil me-2"></i>Chỉnh sửa
+                          </button>
+                        </li>
+                        <li><hr className="dropdown-divider" /></li>
+                        <li>
+                          <button 
+                            className="dropdown-item text-danger"
+                            onClick={() => handleDeleteNote(note.id)}
+                          >
+                            <i className="bi bi-trash me-2"></i>Xóa
+                          </button>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                  
+                  {note.content && (
+                    <p className="card-text text-muted small" style={{
+                      display: '-webkit-box',
+                      WebkitLineClamp: 3,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden'
+                    }}>
+                      {note.content}
+                    </p>
+                  )}
+                  
+                  <div className="mt-auto">
+                    <small className="text-muted">
+                      <i className="bi bi-clock me-1"></i>
+                      {formatDate(note.updatedAt)}
+                    </small>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Create Modal */}
+      {showCreateModal && (
+        <div className="modal fade show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="modal-dialog modal-lg">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Tạo ghi chú mới</h5>
+                <button type="button" className="btn-close" onClick={closeModals}></button>
+              </div>
+              <form onSubmit={handleCreateNote}>
+                <div className="modal-body">
+                  <div className="mb-3">
+                    <label className="form-label">Tiêu đề <span className="text-danger">*</span></label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={formData.title}
+                      onChange={(e) => setFormData({...formData, title: e.target.value})}
+                      placeholder="Nhập tiêu đề ghi chú..."
+                      required
+                    />
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label">Nội dung</label>
+                    <textarea
+                      className="form-control"
+                      rows="8"
+                      value={formData.content}
+                      onChange={(e) => setFormData({...formData, content: e.target.value})}
+                      placeholder="Nhập nội dung ghi chú..."
+                    ></textarea>
+                  </div>
+                </div>
+                <div className="modal-footer">
+                  <button type="button" className="btn btn-secondary" onClick={closeModals}>
+                    Hủy
+                  </button>
+                  <button type="submit" className="btn btn-primary">
+                    <i className="bi bi-plus-lg me-2"></i>Tạo ghi chú
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Modal */}
+      {showEditModal && selectedNote && (
+        <div className="modal fade show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="modal-dialog modal-lg">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Chỉnh sửa ghi chú</h5>
+                <button type="button" className="btn-close" onClick={closeModals}></button>
+              </div>
+              <form onSubmit={handleEditNote}>
+                <div className="modal-body">
+                  <div className="mb-3">
+                    <label className="form-label">Tiêu đề <span className="text-danger">*</span></label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={formData.title}
+                      onChange={(e) => setFormData({...formData, title: e.target.value})}
+                      placeholder="Nhập tiêu đề ghi chú..."
+                      required
+                    />
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label">Nội dung</label>
+                    <textarea
+                      className="form-control"
+                      rows="8"
+                      value={formData.content}
+                      onChange={(e) => setFormData({...formData, content: e.target.value})}
+                      placeholder="Nhập nội dung ghi chú..."
+                    ></textarea>
+                  </div>
+                </div>
+                <div className="modal-footer">
+                  <button type="button" className="btn btn-secondary" onClick={closeModals}>
+                    Hủy
+                  </button>
+                  <button type="submit" className="btn btn-primary">
+                    <i className="bi bi-check-lg me-2"></i>Cập nhật
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+export default Notes
