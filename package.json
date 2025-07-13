@@ -13,10 +13,21 @@
     "start": "cd backend && npm start",
     "build": "cd frontend && npm run build"
   },
-  "keywords": ["nodejs", "react", "mongodb", "express", "jwt", "bootstrap"],
+  "keywords": [
+    "nodejs",
+    "react",
+    "mongodb",
+    "express",
+    "jwt",
+    "bootstrap"
+  ],
   "author": "Workify Team",
   "license": "MIT",
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "@types/node": "^24.0.10",
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
+    "concurrently": "^8.2.2",
+    "typescript": "^5.8.3"
   }
-} 
+}
