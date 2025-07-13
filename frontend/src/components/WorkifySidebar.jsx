@@ -12,6 +12,12 @@ const WorkifySidebar = () => {
       description: 'Tổng quan'
     },
     {
+      path: '/workify/tags',
+      icon: 'bi-tags',
+      label: 'Tags',
+      description: 'Quản lý nhãn'
+    },
+    {
       path: '/workify/tasks',
       icon: 'bi-check2-square',
       label: 'Nhiệm vụ',

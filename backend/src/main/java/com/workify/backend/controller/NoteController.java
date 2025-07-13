@@ -23,7 +23,9 @@ import org.springframework.web.bind.annotation.RestController;
 import com.workify.backend.dto.NoteCreateRequest;
 import com.workify.backend.dto.NoteResponse;
 import com.workify.backend.dto.NoteUpdateRequest;
+import com.workify.backend.dto.TagResponse;
 import com.workify.backend.service.NoteService;
+import com.workify.backend.service.TagService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -35,6 +37,9 @@ public class NoteController {
     
     @Autowired
     private NoteService noteService;
+    
+    @Autowired
+    private TagService tagService;
     
     /**
      * Tạo note mới
@@ -217,13 +222,51 @@ public class NoteController {
         }
     }
     
+    // ================ GĐ5: ENDPOINTS CHO PIN VÀ TAG ================
+    
     /**
-     * Tìm kiếm note theo tiêu đề
+     * GĐ5: Pin hoặc unpin note
      */
-    @GetMapping("/search")
+    @PutMapping("/{id}/pin")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
-    public ResponseEntity<Map<String, Object>> searchNotes(
-            @RequestParam String keyword,
+    public ResponseEntity<Map<String, Object>> togglePinNote(
+            @PathVariable String id,
+            HttpServletRequest httpRequest) {
+        
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            // Lấy user ID từ JWT token
+            String userId = (String) httpRequest.getAttribute("userId");
+            
+            Optional<NoteResponse> noteOpt = noteService.togglePinNote(id, userId);
+            
+            if (noteOpt.isPresent()) {
+                response.put("success", true);
+                response.put("message", noteOpt.get().getIsPinned() ? "Đã ghim note" : "Đã bỏ ghim note");
+                response.put("data", noteOpt.get());
+                return ResponseEntity.ok(response);
+            } else {
+                response.put("success", false);
+                response.put("message", "Không tìm thấy note hoặc bạn không có quyền truy cập");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+            }
+            
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Lỗi khi pin/unpin note: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+    
+    /**
+     * GĐ5: Cập nhật tags cho note
+     */
+    @PutMapping("/{id}/tags")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    public ResponseEntity<Map<String, Object>> updateNoteTags(
+            @PathVariable String id,
+            @RequestBody List<String> tagIds,
             HttpServletRequest httpRequest) {
         
         Map<String, Object> response = new HashMap<>();
@@ -236,27 +279,157 @@ public class NoteController {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
             }
             
-            List<NoteResponse> notes = noteService.searchNotesByTitle(userId, keyword);
+            Optional<NoteResponse> noteOpt = noteService.updateNoteTags(id, tagIds, userId);
             
-            response.put("success", true);
-            response.put("data", notes);
-            response.put("count", notes.size());
+            if (noteOpt.isPresent()) {
+                response.put("success", true);
+                response.put("message", "Cập nhật tags thành công");
+                response.put("data", noteOpt.get());
+                return ResponseEntity.ok(response);
+            } else {
+                response.put("success", false);
+                response.put("message", "Không tìm thấy ghi chú hoặc bạn không có quyền chỉnh sửa");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+            }
             
-            return ResponseEntity.ok(response);
-            
+        } catch (IllegalArgumentException e) {
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         } catch (Exception e) {
             response.put("success", false);
-            response.put("message", "Lỗi khi tìm kiếm ghi chú: " + e.getMessage());
+            response.put("message", "Lỗi khi cập nhật tags: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
     
     /**
-     * Thống kê số lượng note của user
+     * GĐ5: Lấy danh sách notes đã pin của user
+     */
+    @GetMapping("/pinned")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    public ResponseEntity<Map<String, Object>> getPinnedNotes(
+            HttpServletRequest httpRequest) {
+        
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            // Lấy user ID từ JWT token
+            String userId = (String) httpRequest.getAttribute("userId");
+            
+            List<NoteResponse> pinnedNotes = noteService.getPinnedNotesByUser(userId);
+            
+            response.put("success", true);
+            response.put("message", "Lấy danh sách notes đã pin thành công");
+            response.put("data", pinnedNotes);
+            response.put("total", pinnedNotes.size());
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Lỗi khi lấy danh sách notes đã pin: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+    
+    // ================ GĐ6: ENDPOINTS CHO TÌM KIẾM ================
+    
+    /**
+     * GĐ6: Tìm kiếm notes theo từ khóa
+     */
+    @GetMapping("/search")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    public ResponseEntity<Map<String, Object>> searchNotes(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String tag,
+            HttpServletRequest httpRequest) {
+        
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            // Lấy user ID từ JWT token
+            String userId = (String) httpRequest.getAttribute("userId");
+            
+            List<NoteResponse> searchResults;
+            
+            if (tag != null && !tag.isEmpty()) {
+                // Tìm kiếm theo tag
+                searchResults = noteService.searchNotesByTag(userId, tag);
+                response.put("message", "Tìm kiếm notes theo tag '" + tag + "' thành công");
+            } else if (keyword != null && !keyword.isEmpty()) {
+                // Tìm kiếm theo từ khóa
+                searchResults = noteService.searchNotesByKeyword(userId, keyword);
+                response.put("message", "Tìm kiếm notes theo từ khóa '" + keyword + "' thành công");
+            } else {
+                // Không có điều kiện tìm kiếm, trả về tất cả notes
+                searchResults = noteService.getNotesByUser(userId);
+                response.put("message", "Lấy tất cả notes thành công");
+            }
+            
+            response.put("success", true);
+            response.put("data", searchResults);
+            response.put("total", searchResults.size());
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Lỗi khi tìm kiếm notes: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    // ================ THỐNG KÊ ================
+    
+    /**
+     * Lấy thống kê notes của user
      */
     @GetMapping("/stats")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
-    public ResponseEntity<Map<String, Object>> getNoteStats(HttpServletRequest httpRequest) {
+    public ResponseEntity<Map<String, Object>> getUserNoteStats(
+            HttpServletRequest httpRequest) {
+        
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            // Lấy user ID từ JWT token
+            String userId = (String) httpRequest.getAttribute("userId");
+            
+            // Lấy thống kê cơ bản
+            Map<String, Object> stats = new HashMap<>();
+            
+            List<NoteResponse> allNotes = noteService.getNotesByUser(userId);
+            List<NoteResponse> pinnedNotes = noteService.getPinnedNotesByUser(userId);
+            List<TagResponse> userTags = tagService.getAllTagsByUser(userId);
+            
+            stats.put("totalNotes", allNotes.size());
+            stats.put("pinnedNotes", pinnedNotes.size());
+            stats.put("totalTags", userTags.size());
+            stats.put("unpinnedNotes", allNotes.size() - pinnedNotes.size());
+            
+            response.put("success", true);
+            response.put("message", "Lấy thống kê thành công");
+            response.put("data", stats);
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Lỗi khi lấy thống kê: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+    
+    /**
+     * GĐ6: Tìm kiếm notes theo tagId
+     */
+    @GetMapping("/search/tag/{tagId}")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    public ResponseEntity<Map<String, Object>> searchNotesByTag(
+            @PathVariable String tagId,
+            HttpServletRequest httpRequest) {
+        
         Map<String, Object> response = new HashMap<>();
         
         try {
@@ -267,19 +440,59 @@ public class NoteController {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
             }
             
-            long noteCount = noteService.countNotesByUser(userId);
-            
-            Map<String, Object> stats = new HashMap<>();
-            stats.put("totalNotes", noteCount);
-            
+            List<NoteResponse> notes = noteService.searchNotesByTag(userId, tagId);
             response.put("success", true);
-            response.put("data", stats);
-            
+            response.put("data", notes);
             return ResponseEntity.ok(response);
             
+        } catch (IllegalArgumentException e) {
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         } catch (Exception e) {
             response.put("success", false);
-            response.put("message", "Lỗi khi lấy thống kê: " + e.getMessage());
+            response.put("message", "Lỗi khi tìm kiếm notes theo tag: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+    
+    /**
+     * GĐ6: Tìm kiếm notes theo nhiều tagIds
+     */
+    @PostMapping("/search/tags")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    public ResponseEntity<Map<String, Object>> searchNotesByTags(
+            @RequestBody List<String> tagIds,
+            HttpServletRequest httpRequest) {
+        
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            String userId = (String) httpRequest.getAttribute("userId");
+            if (userId == null) {
+                response.put("success", false);
+                response.put("message", "Người dùng chưa được xác thực");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+            }
+            
+            if (tagIds == null || tagIds.isEmpty()) {
+                response.put("success", false);
+                response.put("message", "Danh sách tag không được để trống");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+            }
+            
+            List<NoteResponse> notes = noteService.searchNotesByTags(userId, tagIds);
+            response.put("success", true);
+            response.put("data", notes);
+            return ResponseEntity.ok(response);
+            
+        } catch (IllegalArgumentException e) {
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Lỗi khi tìm kiếm notes theo tags: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }

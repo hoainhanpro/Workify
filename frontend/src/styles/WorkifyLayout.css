@@ -103,6 +103,34 @@
   margin-top: 2px;
 }
 
+/* Sidebar Section */
+.sidebar-section {
+  margin-top: 2rem;
+  padding: 0 20px;
+}
+
+.section-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #6c757d;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.75rem;
+  padding-left: 0.5rem;
+}
+
+.management-item {
+  background: none !important;
+  border: none !important;
+  width: 100%;
+  text-align: left !important;
+  cursor: pointer;
+}
+
+.management-item:hover {
+  background-color: #e9ecef !important;
+}
+
 /* Main Content */
 .workify-main {
   flex: 1;
@@ -284,4 +312,19 @@
 
 .workify-main > * {
   animation: fadeIn 0.3s ease;
+}
+
+/* Import additional component styles */
+@import './TagSidebar.css';
+
+/* Tag Filter Section */
+.tag-filter-section {
+  margin-left: 1rem;
+  min-width: 300px;
+}
+
+.tag-filter-section .form-label {
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: #6c757d;
 }

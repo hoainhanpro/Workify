@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from 'react'
 import { useAuthContext } from '../context/AuthContext'
 import noteService from '../services/noteService'
+import tagService from '../services/tagService'
 import RichTextEditor from '../components/RichTextEditor'
 import NoteContentDisplay from '../components/NoteContentDisplay'
+import TagSelector from '../components/TagSelector'
+import TagDisplay from '../components/TagDisplay'
+import '../styles/TagSelector.css'
 
 const Notes = () => {
   const { user } = useAuthContext()
@@ -13,21 +17,43 @@ const Notes = () => {
   const [selectedNote, setSelectedNote] = useState(null)
   const [searchKeyword, setSearchKeyword] = useState('')
   const [noteStats, setNoteStats] = useState(null)
+  // Tag filter state
+  const [filterType, setFilterType] = useState('all') // 'all', 'pinned', 'tag'
+  const [selectedTagIds, setSelectedTagIds] = useState([])
+  const [availableTags, setAvailableTags] = useState([])
   const [formData, setFormData] = useState({
     title: '',
-    content: ''
+    content: '',
+    tagIds: [],
+    isPinned: false
   })
 
   // Load notes khi component mount
   useEffect(() => {
     loadNotes()
     loadNoteStats()
+    loadAvailableTags()
   }, [])
+
+  // Load notes when filter changes
+  useEffect(() => {
+    loadNotes()
+  }, [filterType, selectedTagIds])
 
   const loadNotes = async () => {
     try {
       setLoading(true)
-      const response = await noteService.getAllNotes()
+      let response
+      
+      // Load notes theo filter type
+      if (filterType === 'pinned') {
+        response = await noteService.getPinnedNotes()
+      } else if (filterType === 'tag' && selectedTagIds.length > 0) {
+        response = await noteService.searchNotesByTagIds(selectedTagIds)
+      } else {
+        response = await noteService.getAllNotes()
+      }
+      
       if (response.success) {
         setNotes(response.data || [])
       }
@@ -36,6 +62,15 @@ const Notes = () => {
       alert('Lỗi khi tải danh sách ghi chú')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const loadAvailableTags = async () => {
+    try {
+      const response = await tagService.getAllTags()
+      setAvailableTags(response.data || response)
+    } catch (error) {
+      console.error('Error loading tags:', error)
     }
   }
 
@@ -62,7 +97,7 @@ const Notes = () => {
       const response = await noteService.createNote(formData)
       if (response.success) {
         setNotes([response.data, ...notes])
-        setFormData({ title: '', content: '' })
+        setFormData({ title: '', content: '', tagIds: [], isPinned: false })
         setShowCreateModal(false)
         loadNoteStats()
         alert('Tạo ghi chú thành công!')
@@ -84,12 +119,14 @@ const Notes = () => {
     try {
       const response = await noteService.updateNote(selectedNote.id, formData)
       if (response.success) {
-        setNotes(notes.map(note => 
+        const updatedNotes = notes.map(note => 
           note.id === selectedNote.id ? response.data : note
-        ))
-        setFormData({ title: '', content: '' })
-        setSelectedNote(null)
+        )
+        setNotes(updatedNotes)
+        setFormData({ title: '', content: '', tagIds: [], isPinned: false })
         setShowEditModal(false)
+        setSelectedNote(null)
+        loadNoteStats()
         alert('Cập nhật ghi chú thành công!')
       }
     } catch (error) {
@@ -124,7 +161,8 @@ const Notes = () => {
 
     try {
       setLoading(true)
-      const response = await noteService.searchNotes(searchKeyword)
+      // GĐ6: Sử dụng API search mới
+      const response = await noteService.searchNotesByKeyword(searchKeyword)
       if (response.success) {
         setNotes(response.data || [])
       }
@@ -136,11 +174,55 @@ const Notes = () => {
     }
   }
 
+  // GĐ5: Xử lý pin/unpin note
+  const handleTogglePin = async (noteId) => {
+    try {
+      const response = await noteService.togglePinNote(noteId)
+      if (response.success) {
+        setNotes(notes.map(note => 
+          note.id === noteId ? { ...note, isPinned: response.data.isPinned } : note
+        ))
+        alert(response.data.isPinned ? 'Đã ghim ghi chú' : 'Đã bỏ ghim ghi chú')
+      }
+    } catch (error) {
+      console.error('Error toggling pin:', error)
+      alert(error.message || 'Lỗi khi pin/unpin ghi chú')
+    }
+  }
+
+  // GĐ5: Xử lý thêm tag - replaced with TagSelector
+  const handleTagsChange = (newTagIds) => {
+    setFormData({ ...formData, tagIds: newTagIds })
+  }
+
+  // GĐ5: Xử lý xóa tag - replaced with TagSelector
+  const handleRemoveTag = (tagIdToRemove) => {
+    setFormData({
+      ...formData,
+      tagIds: formData.tagIds.filter(id => id !== tagIdToRemove)
+    })
+  }
+
+  // GĐ6: Xử lý filter
+  const handleFilterChange = (type, tagIds = []) => {
+    setFilterType(type)
+    setSelectedTagIds(tagIds)
+    // Reset search khi thay đổi filter
+    setSearchKeyword('')
+  }
+
+  // Load notes khi filter thay đổi
+  useEffect(() => {
+    loadNotes()
+  }, [filterType, selectedTagIds])
+
   const openEditModal = (note) => {
     setSelectedNote(note)
     setFormData({
       title: note.title,
-      content: note.content || ''
+      content: note.content || '',
+      tagIds: note.tagIds || [],
+      isPinned: note.isPinned || false
     })
     setShowEditModal(true)
   }
@@ -149,7 +231,7 @@ const Notes = () => {
     setShowCreateModal(false)
     setShowEditModal(false)
     setSelectedNote(null)
-    setFormData({ title: '', content: '' })
+    setFormData({ title: '', content: '', tagIds: [], isPinned: false })
   }
 
   const formatDate = (dateString) => {
@@ -178,7 +260,7 @@ const Notes = () => {
         </button>
       </div>
 
-      {/* Search */}
+      {/* Search và Filters */}
       <div className="row mb-4">
         <div className="col-md-6">
           <div className="input-group">
@@ -207,6 +289,39 @@ const Notes = () => {
                 <i className="bi bi-x-lg"></i>
               </button>
             )}
+          </div>
+        </div>
+        
+        {/* GĐ6: Filter buttons */}
+        <div className="col-md-6">
+          <div className="btn-group" role="group">
+            <button 
+              className={`btn btn-outline-primary ${filterType === 'all' ? 'active' : ''}`}
+              onClick={() => handleFilterChange('all')}
+            >
+              <i className="bi bi-list-ul me-1"></i>Tất cả
+            </button>
+            <button 
+              className={`btn btn-outline-primary ${filterType === 'pinned' ? 'active' : ''}`}
+              onClick={() => handleFilterChange('pinned')}
+            >
+              <i className="bi bi-pin-angle me-1"></i>Đã ghim
+            </button>
+            <div className="tag-filter-section">
+              <label className="form-label small">Lọc theo tags:</label>
+              <TagSelector
+                selectedTagIds={selectedTagIds}
+                onTagsChange={(tagIds) => {
+                  setSelectedTagIds(tagIds)
+                  if (tagIds.length > 0) {
+                    setFilterType('tag')
+                  } else {
+                    setFilterType('all')
+                  }
+                }}
+                placeholder="Chọn tags để lọc..."
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -243,35 +358,56 @@ const Notes = () => {
                       overflow: 'hidden'
                     }}>
                       {note.title}
+                      {/* GĐ5: Pin indicator */}
+                      {note.isPinned && (
+                        <i className="bi bi-pin-angle-fill text-warning ms-2" title="Đã ghim"></i>
+                      )}
                     </h6>
-                    <div className="dropdown">
+                    <div className="d-flex align-items-center">
+                      {/* GĐ5: Pin button */}
                       <button 
-                        className="btn btn-sm btn-outline-secondary border-0"
-                        data-bs-toggle="dropdown"
+                        className={`btn btn-sm ${note.isPinned ? 'btn-warning' : 'btn-outline-secondary'} border-0 me-2`}
+                        onClick={() => handleTogglePin(note.id)}
+                        title={note.isPinned ? 'Bỏ ghim' : 'Ghim ghi chú'}
                       >
-                        <i className="bi bi-three-dots-vertical"></i>
+                        <i className={`bi ${note.isPinned ? 'bi-pin-angle-fill' : 'bi-pin-angle'}`}></i>
                       </button>
-                      <ul className="dropdown-menu">
-                        <li>
-                          <button 
-                            className="dropdown-item"
-                            onClick={() => openEditModal(note)}
-                          >
-                            <i className="bi bi-pencil me-2"></i>Chỉnh sửa
-                          </button>
-                        </li>
-                        <li><hr className="dropdown-divider" /></li>
-                        <li>
-                          <button 
-                            className="dropdown-item text-danger"
-                            onClick={() => handleDeleteNote(note.id)}
-                          >
-                            <i className="bi bi-trash me-2"></i>Xóa
-                          </button>
-                        </li>
-                      </ul>
+                      <div className="dropdown">
+                        <button 
+                          className="btn btn-sm btn-outline-secondary border-0"
+                          data-bs-toggle="dropdown"
+                        >
+                          <i className="bi bi-three-dots-vertical"></i>
+                        </button>
+                        <ul className="dropdown-menu">
+                          <li>
+                            <button 
+                              className="dropdown-item"
+                              onClick={() => openEditModal(note)}
+                            >
+                              <i className="bi bi-pencil me-2"></i>Chỉnh sửa
+                            </button>
+                          </li>
+                          <li><hr className="dropdown-divider" /></li>
+                          <li>
+                            <button 
+                              className="dropdown-item text-danger"
+                              onClick={() => handleDeleteNote(note.id)}
+                            >
+                              <i className="bi bi-trash me-2"></i>Xóa
+                            </button>
+                          </li>
+                        </ul>
+                      </div>
                     </div>
                   </div>
+                  
+                  {/* Tags display */}
+                  {note.tagIds && note.tagIds.length > 0 && (
+                    <div className="mb-2">
+                      <TagDisplay tagIds={note.tagIds} size="small" />
+                    </div>
+                  )}
                   
                   {note.content && (
                     <p className="card-text text-muted small" style={{
@@ -328,6 +464,32 @@ const Notes = () => {
                       height="300px"
                     />
                   </div>
+                  
+                  {/* Tags management */}
+                  <div className="mb-3">
+                    <label className="form-label">Tags</label>
+                    <TagSelector
+                      selectedTagIds={formData.tagIds}
+                      onTagsChange={handleTagsChange}
+                      placeholder="Chọn tags cho ghi chú..."
+                    />
+                  </div>
+                  
+                  {/* GĐ5: Pin option */}
+                  <div className="mb-3">
+                    <div className="form-check">
+                      <input
+                        className="form-check-input"
+                        type="checkbox"
+                        id="isPinnedCreate"
+                        checked={formData.isPinned}
+                        onChange={(e) => setFormData({...formData, isPinned: e.target.checked})}
+                      />
+                      <label className="form-check-label" htmlFor="isPinnedCreate">
+                        <i className="bi bi-pin-angle me-1"></i>Ghim ghi chú này
+                      </label>
+                    </div>
+                  </div>
                 </div>
                 <div className="modal-footer">
                   {/* <button type="button" className="btn btn-secondary" onClick={closeModals}>
@@ -373,6 +535,32 @@ const Notes = () => {
                       placeholder="Nhập nội dung ghi chú..."
                       height="300px"
                     />
+                  </div>
+                  
+                  {/* Tags management */}
+                  <div className="mb-3">
+                    <label className="form-label">Tags</label>
+                    <TagSelector
+                      selectedTagIds={formData.tagIds}
+                      onTagsChange={handleTagsChange}
+                      placeholder="Chọn tags cho ghi chú..."
+                    />
+                  </div>
+                  
+                  {/* GĐ5: Pin option */}
+                  <div className="mb-3">
+                    <div className="form-check">
+                      <input
+                        className="form-check-input"
+                        type="checkbox"
+                        id="isPinnedEdit"
+                        checked={formData.isPinned}
+                        onChange={(e) => setFormData({...formData, isPinned: e.target.checked})}
+                      />
+                      <label className="form-check-label" htmlFor="isPinnedEdit">
+                        <i className="bi bi-pin-angle me-1"></i>Ghim ghi chú này
+                      </label>
+                    </div>
                   </div>
                 </div>
                 <div className="modal-footer">

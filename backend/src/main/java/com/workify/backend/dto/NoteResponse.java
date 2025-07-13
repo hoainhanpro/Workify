@@ -1,6 +1,7 @@
 package com.workify.backend.dto;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import com.workify.backend.model.Note;
 
@@ -10,6 +11,9 @@ public class NoteResponse {
     private String title;
     private String content;
     private String authorId;
+    private List<String> tagIds; // GĐ5: Tag IDs
+    private List<TagResponse> tags; // GĐ5: Tag details (populated từ service)
+    private Boolean isPinned; // GĐ5: Pin status
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     
@@ -21,8 +25,11 @@ public class NoteResponse {
         this.title = note.getTitle();
         this.content = note.getContent();
         this.authorId = note.getAuthorId();
+        this.tagIds = note.getTagIds(); // GĐ5
+        this.isPinned = note.getIsPinned(); // GĐ5
         this.createdAt = note.getCreatedAt();
         this.updatedAt = note.getUpdatedAt();
+        // tags sẽ được populate từ service
     }
     
     // Getters and Setters
@@ -56,6 +63,33 @@ public class NoteResponse {
     
     public void setAuthorId(String authorId) {
         this.authorId = authorId;
+    }
+    
+    // GĐ5: Getter và Setter cho tagIds
+    public List<String> getTagIds() {
+        return tagIds;
+    }
+    
+    public void setTagIds(List<String> tagIds) {
+        this.tagIds = tagIds;
+    }
+    
+    // GĐ5: Getter và Setter cho tags (full info)
+    public List<TagResponse> getTags() {
+        return tags;
+    }
+    
+    public void setTags(List<TagResponse> tags) {
+        this.tags = tags;
+    }
+    
+    // GĐ5: Getter và Setter cho isPinned
+    public Boolean getIsPinned() {
+        return isPinned;
+    }
+    
+    public void setIsPinned(Boolean isPinned) {
+        this.isPinned = isPinned;
     }
     
     public LocalDateTime getCreatedAt() {

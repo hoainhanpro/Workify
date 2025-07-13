@@ -205,12 +205,15 @@ Giai đoạn 1: Cơ bản & Hoạt động cá nhân
     ❌ Tải lên file (local): Upload file, preview, tải xuống
     ❌ Gắn tag, pin note: Thêm trường tags, isPinned
     ❌ Tìm kiếm, filter note: Tìm theo keyword, tag
+    ❌ Cho lưu cả ảnh vào dưới dạng base64 
     ❌ Export note (PDF, HTML): Export nội dung ghi chú
+    ❌ Lưu lịch sử chỉnh sửa: Versioning hoặc undo/redo
+    
 
 [✔️] Task Management (CRUD + Subtasks) 
 → Tạo task chính + subtasks, phân loại mức độ ưu tiên
 
-[❌] Search & Filter
+[✔️] Search & Filter
 → Tìm kiếm task theo từ khoá, mức độ, thời gian
 
 ⚙️ Giai đoạn 2: Mở rộng không gian làm việc (Workspace)
@@ -226,7 +229,6 @@ Giai đoạn 1: Cơ bản & Hoạt động cá nhân
 [❌] Note Management Advance 1 - 
     ❌ Uploadfile: Tích hợp Drive API cho lưu trữ file lớn khi người dùng cấp quyền
     ❌ Chia sẻ note (workspace): Chia sẻ quyền xem/sửa note
-    ❌ Lưu lịch sử chỉnh sửa: Versioning hoặc undo/redo
 
 🤖 Giai đoạn 3: AI & Tích hợp thông minh
 [❌] AI Task Planner (API tích hợp)

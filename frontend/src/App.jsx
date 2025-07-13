@@ -10,6 +10,7 @@ import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
 import Tasks from './pages/Tasks'
 import Notes from './pages/Notes'
+import Tags from './pages/Tags'
 import Profile from './pages/Profile'
 import GoogleCallback from './pages/GoogleCallback'
 import GoogleLinkCallback from './pages/GoogleLinkCallback'
@@ -55,6 +56,7 @@ function App() {
           }>
             <Route index element={<Navigate to="/workify/dashboard" replace />} />
             <Route path="dashboard" element={<Dashboard />} />
+            <Route path="tags" element={<Tags />} />
             <Route path="tasks" element={<Tasks />} />
             <Route path="notes" element={<Notes />} />
             <Route path="profile" element={<Profile />} />

@@ -1,6 +1,8 @@
 package com.workify.backend.model;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
@@ -19,6 +21,10 @@ public class Note {
     
     private String authorId; // ID của người tạo note
     
+    private List<String> tagIds = new ArrayList<>(); // GĐ5: Danh sách ID của tags
+    
+    private Boolean isPinned = false; // GĐ5: Đánh dấu note được ghim
+    
     @CreatedDate
     private LocalDateTime createdAt;
     
@@ -32,6 +38,8 @@ public class Note {
         this.title = title;
         this.content = content;
         this.authorId = authorId;
+        this.tagIds = new ArrayList<>();
+        this.isPinned = false;
     }
     
     // Getters and Setters
@@ -67,6 +75,24 @@ public class Note {
         this.authorId = authorId;
     }
     
+    // GĐ5: Getter và Setter cho tagIds
+    public List<String> getTagIds() {
+        return tagIds;
+    }
+    
+    public void setTagIds(List<String> tagIds) {
+        this.tagIds = tagIds != null ? tagIds : new ArrayList<>();
+    }
+    
+    // GĐ5: Getter và Setter cho isPinned
+    public Boolean getIsPinned() {
+        return isPinned;
+    }
+    
+    public void setIsPinned(Boolean isPinned) {
+        this.isPinned = isPinned != null ? isPinned : false;
+    }
+    
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
@@ -90,6 +116,8 @@ public class Note {
                 ", title='" + title + '\'' +
                 ", content='" + content + '\'' +
                 ", authorId='" + authorId + '\'' +
+                ", tagIds=" + tagIds +
+                ", isPinned=" + isPinned +
                 ", createdAt=" + createdAt +
                 ", updatedAt=" + updatedAt +
                 '}';
