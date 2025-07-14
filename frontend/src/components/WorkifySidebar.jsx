@@ -12,6 +12,12 @@ const WorkifySidebar = () => {
       description: 'Tổng quan'
     },
     {
+      path: '/workify/mail',
+      icon: 'bi-envelope',
+      label: 'Hộp thư đến',
+      description: 'Quản lý email'
+    },
+    {
       path: '/workify/tags',
       icon: 'bi-tags',
       label: 'Tags',

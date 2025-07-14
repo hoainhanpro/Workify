@@ -11,6 +11,7 @@ import Dashboard from './pages/Dashboard'
 import Tasks from './pages/Tasks'
 import Notes from './pages/Notes'
 import Tags from './pages/Tags'
+import Mail from './pages/Mail'
 import Profile from './pages/Profile'
 import GoogleCallback from './pages/GoogleCallback'
 import GoogleLinkCallback from './pages/GoogleLinkCallback'
@@ -59,6 +60,7 @@ function App() {
             <Route path="tags" element={<Tags />} />
             <Route path="tasks" element={<Tasks />} />
             <Route path="notes" element={<Notes />} />
+            <Route path="mail" element={<Mail />} />
             <Route path="profile" element={<Profile />} />
           </Route>
           
