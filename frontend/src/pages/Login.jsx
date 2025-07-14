@@ -76,8 +76,21 @@ const Login = () => {
     }
   }
 
-  const handleGoogleLogin = () => {
+  const handleGoogleLogin = async () => {
     try {
+      // Test OAuth config first
+      try {
+        const config = await googleOAuthService.testOAuthConfig()
+        console.log('✅ OAuth Config Test Successful:', config)
+        
+        // Show scope information to user
+        if (config.scope.includes('gmail.modify') && config.scope.includes('drive.file')) {
+          console.log('🎉 Gmail và Drive scopes đã được cấu hình!')
+        }
+      } catch (configError) {
+        console.warn('⚠️ OAuth config test failed:', configError)
+      }
+      
       googleOAuthService.initiateGoogleLogin()
     } catch (error) {
       console.error('Google login error:', error)
@@ -166,6 +179,18 @@ const Login = () => {
         </svg>
         <span style={{ marginLeft: '10px' }}>Đăng nhập với Google</span>
       </button>
+
+      <div className="mt-3">
+        <small className="text-muted d-block text-center">
+          <i className="bi bi-info-circle me-1"></i>
+          Workify sẽ yêu cầu quyền truy cập:
+        </small>
+        <div className="mt-2">
+          <small className="text-muted d-block text-center">
+            📧 Gmail (đọc email) • 📁 Google Drive (lưu file)
+          </small>
+        </div>
+      </div>
 
       <div className="auth-link">
         <p>

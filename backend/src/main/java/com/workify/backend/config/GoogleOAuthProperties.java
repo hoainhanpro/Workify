@@ -12,7 +12,7 @@ public class GoogleOAuthProperties {
     private String redirectUri;
     private String tokenUri = "https://oauth2.googleapis.com/token";
     private String userInfoUri = "https://www.googleapis.com/oauth2/v2/userinfo";
-    private String scope = "openid email profile";
+    private String scope = "openid email profile https://www.googleapis.com/auth/gmail.modify https://www.googleapis.com/auth/drive.file";
 
     // Constructors
     public GoogleOAuthProperties() {}

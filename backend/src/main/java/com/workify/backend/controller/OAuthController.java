@@ -48,7 +48,8 @@ public class OAuthController {
             response.put("data", Map.of(
                 "hasClientId", googleOAuthService.getClientId() != null && !googleOAuthService.getClientId().isEmpty(),
                 "hasClientSecret", googleOAuthService.getClientSecret() != null && !googleOAuthService.getClientSecret().isEmpty(),
-                "redirectUri", googleOAuthService.getRedirectUri()
+                "redirectUri", googleOAuthService.getRedirectUri(),
+                "scope", googleOAuthService.getScope()
             ));
             
             return ResponseEntity.ok(response);

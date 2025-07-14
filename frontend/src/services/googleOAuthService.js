@@ -2,9 +2,33 @@ import { OAUTH_CONFIG, API_CONFIG, STORAGE_KEYS } from '../config/oauth'
 
 // Google OAuth Service
 const googleOAuthService = {
+  // Test OAuth configuration from backend
+  testOAuthConfig: async () => {
+    try {
+      const response = await fetch(`${API_CONFIG.baseUrl}/oauth/config/test`)
+      const data = await response.json()
+      
+      if (data.success) {
+        console.log('Backend OAuth Config:', data.data)
+        return data.data
+      } else {
+        throw new Error(data.message || 'Failed to get OAuth config')
+      }
+    } catch (error) {
+      console.error('Error testing OAuth config:', error)
+      throw error
+    }
+  },
+
   // Generate Google OAuth URL
   getGoogleAuthUrl: () => {
     const state = generateSecurityToken()
+    
+    // Log scope configuration
+    console.log('🔑 Google OAuth Scope:', OAUTH_CONFIG.google.scope)
+    console.log('📊 Scopes include:')
+    console.log('  - Gmail:', OAUTH_CONFIG.google.scope.includes('gmail.modify'))
+    console.log('  - Drive:', OAUTH_CONFIG.google.scope.includes('drive.file'))
     
     const params = new URLSearchParams({
       client_id: OAUTH_CONFIG.google.clientId,

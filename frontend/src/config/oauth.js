@@ -3,7 +3,7 @@ export const OAUTH_CONFIG = {
   google: {
     clientId: '261651124656-tsgi6qkcj21j73j54qjo8t4rmkdh8uc9.apps.googleusercontent.com',
     redirectUri: 'http://localhost:3000/auth/google/callback',
-    scope: 'openid email profile',
+    scope: 'openid email profile https://www.googleapis.com/auth/gmail.modify https://www.googleapis.com/auth/drive.file',
     authUrl: 'https://accounts.google.com/o/oauth2/auth'
   }
 }

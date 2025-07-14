@@ -497,4 +497,8 @@ public class GoogleOAuthService {
     public String getRedirectUri() {
         return googleOAuthProperties.getRedirectUri();
     }
+
+    public String getScope() {
+        return googleOAuthProperties.getScope();
+    }
 }
