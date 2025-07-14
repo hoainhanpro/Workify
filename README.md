@@ -210,7 +210,7 @@ Giai đoạn 1: Cơ bản & Hoạt động cá nhân
     ❌ Lưu lịch sử chỉnh sửa: Versioning hoặc undo/redo
     
 
-[✔️] Task Management (CRUD + Subtasks) 
+[❌] Task Management (CRUD + Subtasks) 
 → Tạo task chính + subtasks, phân loại mức độ ưu tiên
 
 [✔️] Search & Filter

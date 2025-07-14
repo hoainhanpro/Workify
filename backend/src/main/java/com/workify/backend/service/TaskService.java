@@ -5,6 +5,7 @@ import com.workify.backend.repository.TaskRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -36,7 +37,65 @@ public class TaskService {
 
     // Search tasks by title or description for a user
     public List<Task> searchTasksByUserId(String userId, String searchTerm) {
-        return taskRepository.findByUserIdAndTitleOrDescriptionContaining(userId, searchTerm);
+        // Parse search term for advanced search features
+        List<String> tags = new ArrayList<>();
+        Task.TaskPriority priority = null;
+        String cleanSearchTerm = searchTerm;
+
+        // Extract hashtags for tag search
+        String[] words = searchTerm.split("\\s+");
+        StringBuilder cleanTermBuilder = new StringBuilder();
+        
+        for (String word : words) {
+            if (word.startsWith("#") && word.length() > 1) {
+                // Extract tag (remove #)
+                tags.add(word.substring(1).toLowerCase());
+            } else if (isPriorityKeyword(word)) {
+                // Extract priority
+                priority = parsePriorityKeyword(word);
+            } else {
+                // Keep regular search terms
+                if (cleanTermBuilder.length() > 0) {
+                    cleanTermBuilder.append(" ");
+                }
+                cleanTermBuilder.append(word);
+            }
+        }
+        
+        cleanSearchTerm = cleanTermBuilder.toString().trim();
+
+        // If we have tags or priority, use advanced search
+        if (!tags.isEmpty() || priority != null) {
+            return taskRepository.findByUserIdAndAdvancedSearch(userId, cleanSearchTerm, tags, priority);
+        } else {
+            // Use basic search for title and description
+            return taskRepository.findByUserIdAndTitleOrDescriptionContaining(userId, searchTerm);
+        }
+    }
+
+    // Helper method to check if a word is a priority keyword
+    private boolean isPriorityKeyword(String word) {
+        String lowerWord = word.toLowerCase();
+        return lowerWord.equals("low") || lowerWord.equals("medium") || lowerWord.equals("high") ||
+               lowerWord.equals("thấp") || lowerWord.equals("trung") || lowerWord.equals("cao");
+    }
+
+    // Helper method to parse priority keyword
+    private Task.TaskPriority parsePriorityKeyword(String word) {
+        String lowerWord = word.toLowerCase();
+        switch (lowerWord) {
+            case "low":
+            case "thấp":
+                return Task.TaskPriority.LOW;
+            case "medium":
+            case "trung":
+                return Task.TaskPriority.MEDIUM;
+            case "high":
+            case "cao":
+                return Task.TaskPriority.HIGH;
+            default:
+                return null;
+        }
     }
 
     // Get tasks by tag for a user

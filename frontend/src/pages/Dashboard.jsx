@@ -1,18 +1,79 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuthContext } from '../context/AuthContext'
 import { useTasks } from '../hooks/useTasks'
 import TaskList from '../components/TaskList'
 import DebugInfo from '../components/DebugInfo'
+import CreateTaskModal from '../components/CreateTaskModal'
+import EditTaskModal from '../components/EditTaskModal'
+import ConfirmDeleteModal from '../components/ConfirmDeleteModal'
 
 const Dashboard = () => {
   const { user } = useAuthContext()
-  const { tasks, statistics, loading, error } = useTasks()
+  const { tasks, statistics, loading, error, createTask, updateTask, deleteTask } = useTasks()
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [selectedTask, setSelectedTask] = useState(null)
+  const [deleteLoading, setDeleteLoading] = useState(false)
 
   // Get recent tasks (latest 5)
   const recentTasks = tasks
     .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
     .slice(0, 5)
+
+  const handleCreateTask = async (taskData) => {
+    try {
+      const result = await createTask(taskData)
+      return result
+    } catch (error) {
+      throw error
+    }
+  }
+
+  const handleEditTask = (task) => {
+    setSelectedTask(task)
+    setShowEditModal(true)
+  }
+
+  const handleUpdateTask = async (taskId, taskData) => {
+    try {
+      const result = await updateTask(taskId, taskData)
+      return result
+    } catch (error) {
+      throw error
+    }
+  }
+
+  const handleDeleteTask = async (taskId) => {
+    try {
+      const result = await deleteTask(taskId)
+      return result
+    } catch (error) {
+      throw error
+    }
+  }
+
+  const handleDeleteClick = (task) => {
+    setSelectedTask(task)
+    setShowDeleteModal(true)
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!selectedTask) return
+    
+    setDeleteLoading(true)
+    try {
+      await handleDeleteTask(selectedTask.id)
+      setShowDeleteModal(false)
+      setSelectedTask(null)
+    } catch (error) {
+      console.error('Error deleting task:', error)
+      alert('Có lỗi xảy ra khi xóa nhiệm vụ. Vui lòng thử lại.')
+    } finally {
+      setDeleteLoading(false)
+    }
+  }
 
   return (
     <div className="dashboard">
@@ -130,7 +191,10 @@ const Dashboard = () => {
                 tasks={recentTasks} 
                 loading={loading} 
                 error={error}
-                showActions={false}
+                showActions={true}
+                onTaskUpdate={updateTask}
+                onTaskEdit={handleEditTask}
+                onTaskDelete={handleDeleteClick}
               />
               <div className="text-center mt-3">
                 <Link to="/workify/tasks" className="btn btn-outline-primary">
@@ -150,14 +214,17 @@ const Dashboard = () => {
             </div>
             <div className="card-body">
               <div className="d-grid gap-2">
-                <button className="btn btn-primary">
+                <button 
+                  className="btn btn-primary"
+                  onClick={() => setShowCreateModal(true)}
+                >
                   <i className="bi bi-plus-circle me-2"></i>
                   Tạo nhiệm vụ mới
                 </button>
-                <button className="btn btn-outline-primary">
+                <Link to="/workify/notes" className="btn btn-outline-primary">
                   <i className="bi bi-journal-plus me-2"></i>
                   Thêm ghi chú
-                </button>
+                </Link>
                 <button className="btn btn-outline-primary">
                   <i className="bi bi-calendar-plus me-2"></i>
                   Lên lịch họp
@@ -180,6 +247,36 @@ const Dashboard = () => {
           </div>
         </div>
       )}
+
+      {/* Create Task Modal */}
+      <CreateTaskModal
+        show={showCreateModal}
+        onHide={() => setShowCreateModal(false)}
+        onTaskCreated={handleCreateTask}
+      />
+
+      {/* Edit Task Modal */}
+      <EditTaskModal
+        show={showEditModal}
+        onHide={() => {
+          setShowEditModal(false)
+          setSelectedTask(null)
+        }}
+        task={selectedTask}
+        onTaskUpdated={handleUpdateTask}
+      />
+
+      {/* Confirm Delete Modal */}
+      <ConfirmDeleteModal
+        show={showDeleteModal}
+        onHide={() => {
+          setShowDeleteModal(false)
+          setSelectedTask(null)
+        }}
+        onConfirm={handleConfirmDelete}
+        taskTitle={selectedTask?.title || ''}
+        loading={deleteLoading}
+      />
     </div>
   )
 }

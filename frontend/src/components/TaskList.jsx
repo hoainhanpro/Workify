@@ -1,6 +1,6 @@
 import React from 'react'
 
-const TaskList = ({ tasks, loading, error, showActions = false, onTaskUpdate = null }) => {
+const TaskList = ({ tasks, loading, error, showActions = false, onTaskUpdate = null, onTaskEdit = null, onTaskDelete = null }) => {
   const formatDate = (dateString) => {
     const date = new Date(dateString)
     return date.toLocaleDateString('vi-VN', {
@@ -70,6 +70,18 @@ const TaskList = ({ tasks, loading, error, showActions = false, onTaskUpdate = n
       } catch (error) {
         console.error('Error updating task status:', error)
       }
+    }
+  }
+
+  const handleEditTask = (task) => {
+    if (onTaskEdit) {
+      onTaskEdit(task)
+    }
+  }
+
+  const handleDeleteTask = async (task) => {
+    if (onTaskDelete) {
+      onTaskDelete(task)
     }
   }
 
@@ -203,7 +215,11 @@ const TaskList = ({ tasks, loading, error, showActions = false, onTaskUpdate = n
                       </button>
                       <ul className="dropdown-menu dropdown-menu-end shadow-sm">
                         <li>
-                          <button className="dropdown-item py-2" type="button">
+                          <button 
+                            className="dropdown-item py-2" 
+                            type="button"
+                            onClick={() => handleEditTask(task)}
+                          >
                             <i className="bi bi-pencil me-2"></i>
                             Chỉnh sửa
                           </button>
@@ -216,7 +232,11 @@ const TaskList = ({ tasks, loading, error, showActions = false, onTaskUpdate = n
                         </li>
                         <li><hr className="dropdown-divider my-1" /></li>
                         <li>
-                          <button className="dropdown-item text-danger py-2" type="button">
+                          <button 
+                            className="dropdown-item text-danger py-2" 
+                            type="button"
+                            onClick={() => handleDeleteTask(task)}
+                          >
                             <i className="bi bi-trash me-2"></i>
                             Xóa
                           </button>

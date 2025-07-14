@@ -93,17 +93,24 @@
   transition: all 0.3s ease;
   display: inline-block;
   text-align: center;
+  position: relative;
+  z-index: 5;
 }
 
 .btn-primary {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   width: 100%;
+  border: 2px solid transparent;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+  position: relative;
+  z-index: 10;
 }
 
 .btn-primary:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
+  z-index: 11;
 }
 
 .btn-primary:disabled {
@@ -168,25 +175,30 @@
 .btn-google {
   background: white;
   color: #333;
-  border: 2px solid #e1e5e9;
+  border: 2px solid #dadce0;
   width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
   margin-top: 15px;
+  position: relative;
+  z-index: 10;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
 }
 
 .btn-google:hover {
   background: #f8f9fa;
-  border-color: #dadce0;
+  border-color: #4285f4;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(66, 133, 244, 0.15);
+  z-index: 11;
 }
 
 .btn-google:disabled {
   opacity: 0.6;
   cursor: not-allowed;
   transform: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
 }
 
 .google-icon {
