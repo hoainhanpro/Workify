@@ -8,6 +8,7 @@ import TagSelector from '../components/TagSelector'
 import TagDisplay from '../components/TagDisplay'
 import FileUpload from '../components/FileUpload'
 import FileList from '../components/FileList'
+import VersionHistory from '../components/VersionHistory'
 import '../styles/TagSelector.css'
 
 const Notes = () => {
@@ -33,6 +34,11 @@ const Notes = () => {
   // GĐ7: File upload states
   const [fileRefreshTrigger, setFileRefreshTrigger] = useState(0)
   const [showFileUpload, setShowFileUpload] = useState(false)
+  
+  // GĐ9: Version history states
+  const [showVersionHistory, setShowVersionHistory] = useState(false)
+  const [versionHistoryNoteId, setVersionHistoryNoteId] = useState(null)
+  const [versionCounts, setVersionCounts] = useState({}) // noteId -> version count
 
   // Load notes khi component mount
   useEffect(() => {
@@ -63,6 +69,13 @@ const Notes = () => {
   useEffect(() => {
     loadNotes()
   }, [filterType, selectedTagIds])
+
+  // Load version counts when notes change
+  useEffect(() => {
+    if (notes.length > 0) {
+      loadVersionCounts()
+    }
+  }, [notes.length]) // Only when notes count changes to avoid excessive calls
 
   const loadNotes = async () => {
     try {
@@ -315,6 +328,57 @@ const Notes = () => {
     }
   }
 
+  // GĐ9: Version history handlers
+  const handleShowVersionHistory = (noteId) => {
+    setVersionHistoryNoteId(noteId)
+    setShowVersionHistory(true)
+  }
+
+  const loadVersionCounts = async () => {
+    try {
+      const counts = {}
+      for (const note of notes) {
+        try {
+          const response = await noteService.getNoteVersionHistory(note.id)
+          if (response.success) {
+            counts[note.id] = response.data.length
+          }
+        } catch (error) {
+          console.error(`Error loading version count for note ${note.id}:`, error)
+          counts[note.id] = 0
+        }
+      }
+      setVersionCounts(counts)
+    } catch (error) {
+      console.error('Error loading version counts:', error)
+    }
+  }
+
+  const handleVersionRestore = (restoredNote) => {
+    // Cập nhật note trong danh sách
+    setNotes(prevNotes => 
+      prevNotes.map(note => 
+        note.id === restoredNote.id ? restoredNote : note
+      )
+    )
+    
+    // Nếu đang edit note này, cập nhật selectedNote
+    if (selectedNote && selectedNote.id === restoredNote.id) {
+      setSelectedNote(restoredNote)
+      setFormData({
+        title: restoredNote.title,
+        content: restoredNote.content,
+        tagIds: restoredNote.tagIds || [],
+        isPinned: restoredNote.isPinned || false
+      })
+    }
+  }
+
+  const handleCloseVersionHistory = () => {
+    setShowVersionHistory(false)
+    setVersionHistoryNoteId(null)
+  }
+
   // GĐ6: Xử lý filter
   const handleFilterChange = (type, tagIds = []) => {
     setFilterType(type)
@@ -517,6 +581,21 @@ const Notes = () => {
                       >
                         <i className={`bi ${note.isPinned ? 'bi-pin-angle-fill' : 'bi-pin-angle'}`}></i>
                       </button>
+                      
+                      {/* GĐ9: Version history button */}
+                      <button 
+                        className="btn btn-sm btn-outline-info border-0 me-2 position-relative"
+                        onClick={() => handleShowVersionHistory(note.id)}
+                        title="Xem lịch sử phiên bản"
+                      >
+                        <i className="bi bi-clock-history"></i>
+                        {versionCounts[note.id] > 0 && (
+                          <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-info text-white" style={{fontSize: '0.6rem'}}>
+                            {versionCounts[note.id]}
+                          </span>
+                        )}
+                      </button>
+                      
                       <div className="dropdown">
                         <button 
                           className="btn btn-sm btn-outline-secondary border-0"
@@ -531,6 +610,14 @@ const Notes = () => {
                               onClick={() => openEditModal(note)}
                             >
                               <i className="bi bi-pencil me-2"></i>Chỉnh sửa
+                            </button>
+                          </li>
+                          <li>
+                            <button 
+                              className="dropdown-item"
+                              onClick={() => handleShowVersionHistory(note.id)}
+                            >
+                              <i className="bi bi-clock-history me-2 text-info"></i>Lịch sử phiên bản
                             </button>
                           </li>
                           <li><hr className="dropdown-divider" /></li>
@@ -815,6 +902,15 @@ const Notes = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* GĐ9: Version History Modal */}
+      {showVersionHistory && versionHistoryNoteId && (
+        <VersionHistory
+          noteId={versionHistoryNoteId}
+          onRestore={handleVersionRestore}
+          onClose={handleCloseVersionHistory}
+        />
       )}
     </div>
   )

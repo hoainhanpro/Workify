@@ -27,6 +27,8 @@ public class Note {
     
     private List<Attachment> attachments = new ArrayList<>(); // GĐ7: Danh sách file đính kèm
     
+    private List<NoteVersion> versionHistory = new ArrayList<>(); // GĐ9: Lịch sử phiên bản
+    
     @CreatedDate
     private LocalDateTime createdAt;
     
@@ -43,6 +45,7 @@ public class Note {
         this.tagIds = new ArrayList<>();
         this.isPinned = false;
         this.attachments = new ArrayList<>(); // GĐ7: Khởi tạo danh sách attachments
+        this.versionHistory = new ArrayList<>(); // GĐ9: Khởi tạo lịch sử phiên bản
     }
     
     // Getters and Setters
@@ -104,6 +107,15 @@ public class Note {
     public void setAttachments(List<Attachment> attachments) {
         this.attachments = attachments != null ? attachments : new ArrayList<>();
     }
+    
+    // GĐ9: Getter và Setter cho versionHistory
+    public List<NoteVersion> getVersionHistory() {
+        return versionHistory;
+    }
+    
+    public void setVersionHistory(List<NoteVersion> versionHistory) {
+        this.versionHistory = versionHistory != null ? versionHistory : new ArrayList<>();
+    }
 
     public LocalDateTime getCreatedAt() {
         return createdAt;
@@ -131,6 +143,7 @@ public class Note {
                 ", tagIds=" + tagIds +
                 ", isPinned=" + isPinned +
                 ", attachments=" + attachments +
+                ", versionHistory=" + versionHistory +
                 ", createdAt=" + createdAt +
                 ", updatedAt=" + updatedAt +
                 '}';

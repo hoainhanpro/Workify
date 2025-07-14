@@ -26,9 +26,11 @@ import com.lowagie.text.DocumentException;
 import com.workify.backend.dto.NoteCreateRequest;
 import com.workify.backend.dto.NoteResponse;
 import com.workify.backend.dto.NoteUpdateRequest;
+import com.workify.backend.dto.NoteVersionResponse;
 import com.workify.backend.dto.TagResponse;
 import com.workify.backend.model.Attachment;
 import com.workify.backend.model.Note;
+import com.workify.backend.model.NoteVersion;
 import com.workify.backend.repository.NoteRepository;
 
 @Service
@@ -116,6 +118,20 @@ public class NoteService {
         }
         
         Note note = noteOpt.get();
+        
+        // GĐ9: Lưu version hiện tại trước khi cập nhật (chỉ khi content thay đổi)
+        if (request.getContent() != null && !request.getContent().equals(note.getContent())) {
+            // Lưu version cũ
+            NoteVersion currentVersion = new NoteVersion(
+                note.getContent(), 
+                LocalDateTime.now(), 
+                "Auto save before update"
+            );
+            note.getVersionHistory().add(currentVersion);
+            
+            // Giới hạn số lượng version (giữ tối đa 50 versions)
+            limitVersionHistory(note, 50);
+        }
         
         // Chỉ cập nhật các trường không null
         if (request.getTitle() != null) {
@@ -803,5 +819,75 @@ public class NoteService {
             return XWPFDocument.PICTURE_TYPE_GIF;
         }
         return XWPFDocument.PICTURE_TYPE_JPEG; // Default to JPEG
+    }
+    
+    /**
+     * GĐ9: Giới hạn số lượng version history để tránh quá tải dữ liệu
+     */
+    private void limitVersionHistory(Note note, int maxVersions) {
+        List<NoteVersion> versions = note.getVersionHistory();
+        if (versions.size() > maxVersions) {
+            // Giữ lại chỉ các version mới nhất
+            List<NoteVersion> limitedVersions = versions.subList(
+                versions.size() - maxVersions, 
+                versions.size()
+            );
+            note.setVersionHistory(new ArrayList<>(limitedVersions));
+        }
+    }
+    
+    /**
+     * GĐ9: Lấy danh sách version history của note
+     */
+    public List<NoteVersionResponse> getNoteVersionHistory(String noteId, String authorId) {
+        Optional<Note> noteOpt = noteRepository.findById(noteId);
+        
+        if (noteOpt.isEmpty() || !noteOpt.get().getAuthorId().equals(authorId)) {
+            return new ArrayList<>();
+        }
+        
+        return noteOpt.get().getVersionHistory().stream()
+                .map(version -> new NoteVersionResponse(
+                    version.getContent(),
+                    version.getTimestamp(),
+                    version.getChangeDescription()
+                ))
+                .collect(Collectors.toList());
+    }
+    
+    /**
+     * GĐ9: Khôi phục note về một version cụ thể (undo/redo)
+     */
+    public Optional<NoteResponse> restoreNoteToVersion(String noteId, int versionIndex, String authorId) {
+        Optional<Note> noteOpt = noteRepository.findById(noteId);
+        
+        if (noteOpt.isEmpty() || !noteOpt.get().getAuthorId().equals(authorId)) {
+            return Optional.empty();
+        }
+        
+        Note note = noteOpt.get();
+        List<NoteVersion> versions = note.getVersionHistory();
+        
+        if (versionIndex < 0 || versionIndex >= versions.size()) {
+            throw new IllegalArgumentException("Version index không hợp lệ");
+        }
+        
+        // Lưu version hiện tại trước khi khôi phục
+        NoteVersion currentVersion = new NoteVersion(
+            note.getContent(),
+            LocalDateTime.now(),
+            "Auto save before restore to version " + versionIndex
+        );
+        note.getVersionHistory().add(currentVersion);
+        
+        // Khôi phục content từ version được chọn
+        NoteVersion targetVersion = versions.get(versionIndex);
+        note.setContent(targetVersion.getContent());
+        
+        // Giới hạn version history
+        limitVersionHistory(note, 50);
+        
+        Note updatedNote = noteRepository.save(note);
+        return Optional.of(populateTagsInResponse(updatedNote));
     }
 }

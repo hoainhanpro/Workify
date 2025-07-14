@@ -486,6 +486,56 @@ const noteService = {
       console.error('Error exporting DOCX:', error)
       throw error
     }
+  },
+
+  // GĐ9: Lấy lịch sử phiên bản của note
+  getNoteVersionHistory: async (noteId) => {
+    try {
+      const token = localStorage.getItem('workify_access_token')
+      
+      const response = await fetch(`${API_CONFIG.baseUrl}/notes/${noteId}/versions`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      const data = await response.json()
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'Lỗi khi lấy lịch sử phiên bản')
+      }
+
+      return data
+    } catch (error) {
+      console.error('Error getting note version history:', error)
+      throw error
+    }
+  },
+
+  // GĐ9: Khôi phục note về một phiên bản cụ thể
+  restoreNoteToVersion: async (noteId, versionIndex) => {
+    try {
+      const token = localStorage.getItem('workify_access_token')
+      
+      const response = await fetch(`${API_CONFIG.baseUrl}/notes/${noteId}/restore?versionIndex=${versionIndex}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      const data = await response.json()
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'Lỗi khi khôi phục note')
+      }
+
+      return data
+    } catch (error) {
+      console.error('Error restoring note to version:', error)
+      throw error
+    }
   }
 }
 

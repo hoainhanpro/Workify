@@ -728,4 +728,80 @@ public class NoteController {
                       .replaceAll("\\s+", "_")
                       .substring(0, Math.min(fileName.length(), 50)); // Limit length
     }
+    
+    /**
+     * GĐ9: Lấy lịch sử phiên bản của note
+     */
+    @GetMapping("/{noteId}/versions")
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<Map<String, Object>> getNoteVersionHistory(
+            @PathVariable String noteId,
+            HttpServletRequest request) {
+        
+        String userId = (String) request.getAttribute("userId");
+        
+        try {
+            List<com.workify.backend.dto.NoteVersionResponse> versions = noteService.getNoteVersionHistory(noteId, userId);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("data", versions);
+            response.put("total", versions.size());
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", "Lỗi khi lấy lịch sử phiên bản: " + e.getMessage());
+            
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+    }
+    
+    /**
+     * GĐ9: Khôi phục note về một phiên bản cụ thể (undo/redo)
+     */
+    @PostMapping("/{noteId}/restore")
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<Map<String, Object>> restoreNoteToVersion(
+            @PathVariable String noteId,
+            @RequestParam int versionIndex,
+            HttpServletRequest request) {
+        
+        String userId = (String) request.getAttribute("userId");
+        
+        try {
+            Optional<NoteResponse> restoredNoteOpt = noteService.restoreNoteToVersion(noteId, versionIndex, userId);
+            
+            if (!restoredNoteOpt.isPresent()) {
+                Map<String, Object> errorResponse = new HashMap<>();
+                errorResponse.put("success", false);
+                errorResponse.put("message", "Note không tồn tại hoặc bạn không có quyền truy cập");
+                
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+            }
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("data", restoredNoteOpt.get());
+            response.put("message", "Đã khôi phục note về phiên bản " + versionIndex);
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (IllegalArgumentException e) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", e.getMessage());
+            
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+            
+        } catch (Exception e) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", "Lỗi khi khôi phục note: " + e.getMessage());
+            
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+    }
 }
