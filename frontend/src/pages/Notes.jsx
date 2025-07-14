@@ -232,6 +232,69 @@ const Notes = () => {
     })
   }
 
+  // GĐ8: Export handlers
+  const handleExportToPdf = async (noteId, noteTitle) => {
+    try {
+      await noteService.exportNoteToPdf(noteId)
+      alert(`Export PDF thành công cho ghi chú "${noteTitle}"!`)
+    } catch (error) {
+      console.error('Error exporting PDF:', error)
+      alert('Lỗi khi export PDF: ' + (error.message || 'Lỗi không xác định'))
+    }
+  }
+
+  const handleExportToDocx = async (noteId, noteTitle) => {
+    try {
+      await noteService.exportNoteToDocx(noteId)
+      alert(`Export DOCX thành công cho ghi chú "${noteTitle}"!`)
+    } catch (error) {
+      console.error('Error exporting DOCX:', error)
+      alert('Lỗi khi export DOCX: ' + (error.message || 'Lỗi không xác định'))
+    }
+  }
+
+  // GĐ8: Bulk export handler
+  const handleBulkExport = async (format) => {
+    if (notes.length === 0) {
+      alert('Không có ghi chú nào để export')
+      return
+    }
+
+    const confirmMessage = `Bạn có chắc muốn export tất cả ${notes.length} ghi chú thành ${format.toUpperCase()}? Quá trình này có thể mất vài phút.`
+    if (!window.confirm(confirmMessage)) {
+      return
+    }
+
+    try {
+      const formatName = format === 'pdf' ? 'PDF' : 'DOCX'
+      alert(`Bắt đầu export ${notes.length} ghi chú thành ${formatName}. Các file sẽ được tải xuống lần lượt.`)
+      
+      for (let i = 0; i < notes.length; i++) {
+        const note = notes[i]
+        try {
+          if (format === 'pdf') {
+            await noteService.exportNoteToPdf(note.id)
+          } else {
+            await noteService.exportNoteToDocx(note.id)
+          }
+          
+          // Add small delay between downloads to avoid overwhelming the browser
+          if (i < notes.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 1000))
+          }
+        } catch (error) {
+          console.error(`Error exporting note ${note.title}:`, error)
+          // Continue with other notes even if one fails
+        }
+      }
+      
+      alert(`Hoàn tất export ${notes.length} ghi chú thành ${formatName}!`)
+    } catch (error) {
+      console.error('Error in bulk export:', error)
+      alert('Lỗi khi export hàng loạt: ' + (error.message || 'Lỗi không xác định'))
+    }
+  }
+
   // GĐ6: Xử lý filter
   const handleFilterChange = (type, tagIds = []) => {
     setFilterType(type)
@@ -280,13 +343,50 @@ const Notes = () => {
             )}
           </p>
         </div>
-        <button 
-          className="btn btn-primary"
-          onClick={() => setShowCreateModal(true)}
-        >
-          <i className="bi bi-plus-lg me-2"></i>
-          Tạo ghi chú mới
-        </button>
+        <div className="d-flex gap-2">
+          <div className="dropdown">
+            <button 
+              className="btn btn-outline-secondary dropdown-toggle"
+              data-bs-toggle="dropdown"
+              disabled={notes.length === 0}
+            >
+              <i className="bi bi-download me-2"></i>
+              Export
+            </button>
+            <ul className="dropdown-menu">
+              <li>
+                <h6 className="dropdown-header">Export tất cả ghi chú</h6>
+              </li>
+              <li>
+                <button 
+                  className="dropdown-item"
+                  onClick={() => handleBulkExport('pdf')}
+                  disabled={notes.length === 0}
+                >
+                  <i className="bi bi-file-earmark-pdf me-2 text-danger"></i>
+                  Tất cả thành PDF
+                </button>
+              </li>
+              <li>
+                <button 
+                  className="dropdown-item"
+                  onClick={() => handleBulkExport('docx')}
+                  disabled={notes.length === 0}
+                >
+                  <i className="bi bi-file-earmark-word me-2 text-primary"></i>
+                  Tất cả thành DOCX
+                </button>
+              </li>
+            </ul>
+          </div>
+          <button 
+            className="btn btn-primary"
+            onClick={() => setShowCreateModal(true)}
+          >
+            <i className="bi bi-plus-lg me-2"></i>
+            Tạo ghi chú mới
+          </button>
+        </div>
       </div>
 
       {/* Search và Filters */}
@@ -415,6 +515,28 @@ const Notes = () => {
                               onClick={() => openEditModal(note)}
                             >
                               <i className="bi bi-pencil me-2"></i>Chỉnh sửa
+                            </button>
+                          </li>
+                          <li><hr className="dropdown-divider" /></li>
+                          {/* <li>
+                            <h6 className="dropdown-header">
+                              <i className="bi bi-download me-2"></i>Export
+                            </h6>
+                          </li> */}
+                          <li>
+                            <button 
+                              className="dropdown-item"
+                              onClick={() => handleExportToPdf(note.id, note.title)}
+                            >
+                              <i className="bi bi-file-earmark-pdf me-2 text-danger"></i>Xuất PDF
+                            </button>
+                          </li>
+                          <li>
+                            <button 
+                              className="dropdown-item"
+                              onClick={() => handleExportToDocx(note.id, note.title)}
+                            >
+                              <i className="bi bi-file-earmark-word me-2 text-primary"></i>Xuất DOCX
                             </button>
                           </li>
                           <li><hr className="dropdown-divider" /></li>
@@ -631,6 +753,32 @@ const Notes = () => {
                       onFileDeleted={handleFileDeleted}
                       onError={handleFileError}
                     />
+                  </div>
+                  
+                  {/* GĐ8: Export section */}
+                  <div className="mb-3">
+                    <label className="form-label">Export ghi chú</label>
+                    <div className="d-flex gap-2">
+                      <button
+                        type="button"
+                        className="btn btn-outline-danger btn-sm"
+                        onClick={() => handleExportToPdf(selectedNote.id, selectedNote.title)}
+                      >
+                        <i className="bi bi-file-earmark-pdf me-1"></i>
+                        Xuất PDF
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-outline-primary btn-sm"
+                        onClick={() => handleExportToDocx(selectedNote.id, selectedNote.title)}
+                      >
+                        <i className="bi bi-file-earmark-word me-1"></i>
+                        Xuất DOCX
+                      </button>
+                    </div>
+                    <small className="text-muted">
+                      Tải xuống ghi chú dưới định dạng PDF hoặc Word để chia sẻ và lưu trữ.
+                    </small>
                   </div>
                 </div>
                 <div className="modal-footer">

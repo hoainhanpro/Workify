@@ -1,17 +1,28 @@
 package com.workify.backend.service;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import org.apache.poi.xwpf.usermodel.XWPFDocument;
+import org.apache.poi.xwpf.usermodel.XWPFParagraph;
+import org.apache.poi.xwpf.usermodel.XWPFRun;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.lowagie.text.DocumentException;
 import com.workify.backend.dto.NoteCreateRequest;
 import com.workify.backend.dto.NoteResponse;
 import com.workify.backend.dto.NoteUpdateRequest;
@@ -405,5 +416,392 @@ public class NoteService {
                 .filter(att -> att.getFileName().equals(fileName))
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("File không tồn tại"));
+    }
+    
+    /**
+     * GĐ8: Export note to PDF format
+     */
+    public byte[] exportNoteToPdf(String noteId, String authorId) throws IOException {
+        Note note = getNoteForExport(noteId, authorId);
+        
+        try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+            // Create PDF document
+            com.lowagie.text.Document document = new com.lowagie.text.Document();
+            com.lowagie.text.pdf.PdfWriter.getInstance(document, outputStream);
+            document.open();
+            
+            // Add title
+            com.lowagie.text.Font titleFont = new com.lowagie.text.Font(com.lowagie.text.Font.HELVETICA, 18, com.lowagie.text.Font.BOLD);
+            com.lowagie.text.Paragraph title = new com.lowagie.text.Paragraph(note.getTitle(), titleFont);
+            title.setSpacingAfter(10f);
+            document.add(title);
+            
+            // Add metadata
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+            com.lowagie.text.Font metaFont = new com.lowagie.text.Font(com.lowagie.text.Font.HELVETICA, 10, com.lowagie.text.Font.ITALIC);
+            String metaText = "Ngày tạo: " + note.getCreatedAt().format(formatter) + "\n" +
+                            "Cập nhật lần cuối: " + note.getUpdatedAt().format(formatter);
+            com.lowagie.text.Paragraph meta = new com.lowagie.text.Paragraph(metaText, metaFont);
+            meta.setSpacingAfter(20f);
+            document.add(meta);
+            
+            // Process content with images
+            processContentForPdf(note.getContent(), document);
+            
+            // Add tags if any
+            if (note.getTagIds() != null && !note.getTagIds().isEmpty()) {
+                List<String> tagNames = note.getTagIds().stream()
+                    .map(tagId -> tagService.getTagById(tagId, note.getAuthorId()))
+                    .filter(Optional::isPresent)
+                    .map(Optional::get)
+                    .map(tag -> tag.getName())
+                    .collect(Collectors.toList());
+                
+                if (!tagNames.isEmpty()) {
+                    com.lowagie.text.Font tagFont = new com.lowagie.text.Font(com.lowagie.text.Font.HELVETICA, 10, com.lowagie.text.Font.ITALIC);
+                    String tagText = "\nTags: " + String.join(", ", tagNames);
+                    com.lowagie.text.Paragraph tags = new com.lowagie.text.Paragraph(tagText, tagFont);
+                    document.add(tags);
+                }
+            }
+            
+            document.close();
+            System.out.println("PDF generated successfully for note: " + note.getTitle());
+            return outputStream.toByteArray();
+            
+        } catch (DocumentException e) {
+            System.err.println("DocumentException in PDF generation: " + e.getMessage());
+            e.printStackTrace();
+            throw new IOException("Error generating PDF - Document formatting issue: " + e.getMessage(), e);
+        } catch (Exception e) {
+            System.err.println("Unexpected error in PDF generation: " + e.getMessage());
+            e.printStackTrace();
+            throw new IOException("Error generating PDF - Unexpected error: " + e.getMessage(), e);
+        }
+    }
+    
+    /**
+     * GĐ8: Export note to DOCX format
+     */
+    public byte[] exportNoteToDocx(String noteId, String authorId) throws IOException {
+        Note note = getNoteForExport(noteId, authorId);
+        
+        try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+             XWPFDocument document = new XWPFDocument()) {
+            
+            // Add title
+            XWPFParagraph titleParagraph = document.createParagraph();
+            XWPFRun titleRun = titleParagraph.createRun();
+            titleRun.setText(note.getTitle());
+            titleRun.setBold(true);
+            titleRun.setFontSize(16);
+            
+            // Add metadata
+            XWPFParagraph metaParagraph = document.createParagraph();
+            XWPFRun metaRun = metaParagraph.createRun();
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+            String metaText = "Ngày tạo: " + note.getCreatedAt().format(formatter) + 
+                            "\nCập nhật lần cuối: " + note.getUpdatedAt().format(formatter);
+            metaRun.setText(metaText);
+            metaRun.setFontSize(10);
+            metaRun.setItalic(true);
+            
+            // Process content with images for DOCX
+            processContentForDocx(note.getContent(), document);
+            
+            // Add tags if any
+            if (note.getTagIds() != null && !note.getTagIds().isEmpty()) {
+                XWPFParagraph tagsParagraph = document.createParagraph();
+                XWPFRun tagsRun = tagsParagraph.createRun();
+                List<String> tagNames = note.getTagIds().stream()
+                    .map(tagId -> tagService.getTagById(tagId, authorId))
+                    .filter(Optional::isPresent)
+                    .map(Optional::get)
+                    .map(tag -> tag.getName())
+                    .collect(Collectors.toList());
+                tagsRun.setText("\nTags: " + String.join(", ", tagNames));
+                tagsRun.setItalic(true);
+            }
+            
+            document.write(outputStream);
+            return outputStream.toByteArray();
+            
+        } catch (IOException e) {
+            throw new IOException("Error generating DOCX: " + e.getMessage(), e);
+        }
+    }
+    
+    /**
+     * Helper method to get note with permission check
+     */
+    private Note getNoteForExport(String noteId, String authorId) {
+        Note note = noteRepository.findById(noteId)
+                .orElseThrow(() -> new RuntimeException("Note không tồn tại"));
+        
+        if (!note.getAuthorId().equals(authorId)) {
+            throw new RuntimeException("Không có quyền export note này");
+        }
+        
+        return note;
+    }
+    
+    /**
+     * Helper method to strip HTML tags for plain text
+     */
+    private String stripHtmlTags(String html) {
+        if (html == null) return "";
+        return html.replaceAll("<[^>]+>", "").replaceAll("&nbsp;", " ");
+    }
+    
+    /**
+     * Helper method to convert HTML to plain text using Jsoup
+     */
+    private String htmlToPlainText(String html) {
+        if (html == null || html.trim().isEmpty()) {
+            return "";
+        }
+        
+        try {
+            // Parse HTML and extract text
+            Document doc = Jsoup.parse(html);
+            return doc.text();
+        } catch (Exception e) {
+            // If parsing fails, fallback to simple regex
+            return stripHtmlTags(html);
+        }
+    }
+    
+    /**
+     * Helper method to process content for PDF with base64 images
+     */
+    private void processContentForPdf(String htmlContent, com.lowagie.text.Document document) throws DocumentException, IOException {
+        if (htmlContent == null || htmlContent.trim().isEmpty()) {
+            return;
+        }
+        
+        try {
+            // Parse HTML content
+            Document doc = Jsoup.parse(htmlContent);
+            
+            // Find all elements and process them
+            for (Element element : doc.body().getAllElements()) {
+                if ("img".equals(element.tagName())) {
+                    // Process image elements
+                    processImageForPdf(element, document);
+                } else if (element.hasText() && element.children().isEmpty()) {
+                    // Process text elements
+                    String text = element.text().trim();
+                    if (!text.isEmpty()) {
+                        com.lowagie.text.Font contentFont = new com.lowagie.text.Font(com.lowagie.text.Font.HELVETICA, 12);
+                        com.lowagie.text.Paragraph paragraph = new com.lowagie.text.Paragraph(text, contentFont);
+                        paragraph.setSpacingAfter(10f);
+                        document.add(paragraph);
+                    }
+                }
+            }
+            
+            // If no specific elements found, add as plain text
+            if (doc.body().getAllElements().size() <= 2) { // Only html and body
+                String plainText = doc.text();
+                if (!plainText.trim().isEmpty()) {
+                    com.lowagie.text.Font contentFont = new com.lowagie.text.Font(com.lowagie.text.Font.HELVETICA, 12);
+                    com.lowagie.text.Paragraph paragraph = new com.lowagie.text.Paragraph(plainText, contentFont);
+                    paragraph.setSpacingAfter(20f);
+                    document.add(paragraph);
+                }
+            }
+            
+        } catch (Exception e) {
+            // Fallback to plain text if HTML parsing fails
+            String plainText = htmlToPlainText(htmlContent);
+            if (!plainText.trim().isEmpty()) {
+                com.lowagie.text.Font contentFont = new com.lowagie.text.Font(com.lowagie.text.Font.HELVETICA, 12);
+                com.lowagie.text.Paragraph paragraph = new com.lowagie.text.Paragraph(plainText, contentFont);
+                paragraph.setSpacingAfter(20f);
+                document.add(paragraph);
+            }
+        }
+    }
+    
+    /**
+     * Helper method to process base64 images for PDF
+     */
+    private void processImageForPdf(Element imgElement, com.lowagie.text.Document document) throws DocumentException {
+        try {
+            String src = imgElement.attr("src");
+            
+            if (src.startsWith("data:image/")) {
+                // Extract base64 data
+                String base64Data = extractBase64FromDataUrl(src);
+                if (base64Data != null) {
+                    byte[] imageBytes = Base64.getDecoder().decode(base64Data);
+                    
+                    // Create iText image
+                    com.lowagie.text.Image image = com.lowagie.text.Image.getInstance(imageBytes);
+                    
+                    // Scale image to fit page
+                    float maxWidth = document.getPageSize().getWidth() - document.leftMargin() - document.rightMargin();
+                    float maxHeight = 300f; // Max height for images
+                    
+                    if (image.getWidth() > maxWidth) {
+                        float scale = maxWidth / image.getWidth();
+                        image.scalePercent(scale * 100);
+                    }
+                    if (image.getScaledHeight() > maxHeight) {
+                        float scale = maxHeight / image.getScaledHeight();
+                        image.scalePercent(image.getScaledWidth() * scale / image.getWidth() * 100);
+                    }
+                    
+                    image.setSpacingBefore(10f);
+                    image.setSpacingAfter(10f);
+                    image.setAlignment(com.lowagie.text.Image.MIDDLE);
+                    
+                    document.add(image);
+                }
+            } else {
+                // Non-base64 image, add placeholder text
+                com.lowagie.text.Font placeholderFont = new com.lowagie.text.Font(com.lowagie.text.Font.HELVETICA, 10, com.lowagie.text.Font.ITALIC);
+                com.lowagie.text.Paragraph placeholder = new com.lowagie.text.Paragraph("[Hình ảnh: " + (src.length() > 50 ? src.substring(0, 50) + "..." : src) + "]", placeholderFont);
+                placeholder.setSpacingAfter(10f);
+                document.add(placeholder);
+            }
+            
+        } catch (Exception e) {
+            System.err.println("Error processing image for PDF: " + e.getMessage());
+            // Add error placeholder
+            com.lowagie.text.Font errorFont = new com.lowagie.text.Font(com.lowagie.text.Font.HELVETICA, 10, com.lowagie.text.Font.ITALIC);
+            com.lowagie.text.Paragraph error = new com.lowagie.text.Paragraph("[Lỗi khi xử lý hình ảnh]", errorFont);
+            error.setSpacingAfter(10f);
+            try {
+                document.add(error);
+            } catch (DocumentException de) {
+                // Ignore if can't add error message
+            }
+        }
+    }
+    
+    /**
+     * Helper method to extract base64 data from data URL
+     */
+    private String extractBase64FromDataUrl(String dataUrl) {
+        if (dataUrl == null || !dataUrl.startsWith("data:")) {
+            return null;
+        }
+        
+        int commaIndex = dataUrl.indexOf(",");
+        if (commaIndex == -1) {
+            return null;
+        }
+        
+        return dataUrl.substring(commaIndex + 1);
+    }
+    
+    /**
+     * Helper method to process content for DOCX with base64 images
+     */
+    private void processContentForDocx(String htmlContent, XWPFDocument document) throws IOException {
+        if (htmlContent == null || htmlContent.trim().isEmpty()) {
+            return;
+        }
+        
+        try {
+            // Parse HTML content
+            Document doc = Jsoup.parse(htmlContent);
+            
+            // Find all elements and process them
+            for (Element element : doc.body().getAllElements()) {
+                if ("img".equals(element.tagName())) {
+                    // Process image elements
+                    processImageForDocx(element, document);
+                } else if (element.hasText() && element.children().isEmpty()) {
+                    // Process text elements
+                    String text = element.text().trim();
+                    if (!text.isEmpty()) {
+                        XWPFParagraph paragraph = document.createParagraph();
+                        XWPFRun run = paragraph.createRun();
+                        run.setText(text);
+                    }
+                }
+            }
+            
+            // If no specific elements found, add as plain text
+            if (doc.body().getAllElements().size() <= 2) { // Only html and body
+                String plainText = doc.text();
+                if (!plainText.trim().isEmpty()) {
+                    XWPFParagraph paragraph = document.createParagraph();
+                    XWPFRun run = paragraph.createRun();
+                    run.setText(plainText);
+                }
+            }
+            
+        } catch (Exception e) {
+            // Fallback to plain text if HTML parsing fails
+            String plainText = htmlToPlainText(htmlContent);
+            if (!plainText.trim().isEmpty()) {
+                XWPFParagraph paragraph = document.createParagraph();
+                XWPFRun run = paragraph.createRun();
+                run.setText(plainText);
+            }
+        }
+    }
+    
+    /**
+     * Helper method to process base64 images for DOCX
+     */
+    private void processImageForDocx(Element imgElement, XWPFDocument document) {
+        try {
+            String src = imgElement.attr("src");
+            
+            if (src.startsWith("data:image/")) {
+                // Extract base64 data
+                String base64Data = extractBase64FromDataUrl(src);
+                if (base64Data != null) {
+                    byte[] imageBytes = Base64.getDecoder().decode(base64Data);
+                    
+                    // Determine image format
+                    int format = getImageFormat(src);
+                    if (format != -1) {
+                        // Create new paragraph for image
+                        XWPFParagraph paragraph = document.createParagraph();
+                        XWPFRun run = paragraph.createRun();
+                        
+                        // Add image to document
+                        try (ByteArrayInputStream bis = new ByteArrayInputStream(imageBytes)) {
+                            run.addPicture(bis, format, "image", 
+                                          org.apache.poi.util.Units.toEMU(300), // width
+                                          org.apache.poi.util.Units.toEMU(200)); // height
+                        }
+                    }
+                }
+            } else {
+                // Non-base64 image, add placeholder text
+                XWPFParagraph paragraph = document.createParagraph();
+                XWPFRun run = paragraph.createRun();
+                run.setText("[Hình ảnh: " + (src.length() > 50 ? src.substring(0, 50) + "..." : src) + "]");
+                run.setItalic(true);
+            }
+            
+        } catch (Exception e) {
+            System.err.println("Error processing image for DOCX: " + e.getMessage());
+            // Add error placeholder
+            XWPFParagraph paragraph = document.createParagraph();
+            XWPFRun run = paragraph.createRun();
+            run.setText("[Lỗi khi xử lý hình ảnh]");
+            run.setItalic(true);
+        }
+    }
+    
+    /**
+     * Helper method to get image format for DOCX
+     */
+    private int getImageFormat(String dataUrl) {
+        if (dataUrl.contains("image/png")) {
+            return XWPFDocument.PICTURE_TYPE_PNG;
+        } else if (dataUrl.contains("image/jpeg") || dataUrl.contains("image/jpg")) {
+            return XWPFDocument.PICTURE_TYPE_JPEG;
+        } else if (dataUrl.contains("image/gif")) {
+            return XWPFDocument.PICTURE_TYPE_GIF;
+        }
+        return XWPFDocument.PICTURE_TYPE_JPEG; // Default to JPEG
     }
 }

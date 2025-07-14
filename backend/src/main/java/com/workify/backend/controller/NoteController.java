@@ -658,4 +658,74 @@ public class NoteController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
     }
+    
+    /**
+     * GĐ8: Export note to PDF format
+     */
+    @GetMapping("/{noteId}/export")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    public ResponseEntity<byte[]> exportNote(
+            @PathVariable String noteId,
+            @RequestParam(defaultValue = "pdf") String format,
+            HttpServletRequest httpRequest) {
+        
+        try {
+            String userId = (String) httpRequest.getAttribute("userId");
+            
+            if (userId == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+            
+            byte[] exportData;
+            String contentType;
+            String fileExtension;
+            
+            switch (format.toLowerCase()) {
+                case "pdf":
+                    exportData = noteService.exportNoteToPdf(noteId, userId);
+                    contentType = "application/pdf";
+                    fileExtension = ".pdf";
+                    break;
+                    
+                case "docx":
+                    exportData = noteService.exportNoteToDocx(noteId, userId);
+                    contentType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+                    fileExtension = ".docx";
+                    break;
+                    
+                default:
+                    return ResponseEntity.badRequest().build();
+            }
+            
+            // Lấy tên note để tạo filename
+            Optional<NoteResponse> noteOpt = noteService.getNoteById(noteId, userId);
+            if (!noteOpt.isPresent()) {
+                return ResponseEntity.notFound().build();
+            }
+            String fileName = sanitizeFileName(noteOpt.get().getTitle()) + fileExtension;
+            
+            return ResponseEntity.ok()
+                    .header("Content-Type", contentType)
+                    .header("Content-Length", String.valueOf(exportData.length))
+                    .header("Content-Disposition", "attachment; filename=\"" + fileName + "\"")
+                    .body(exportData);
+            
+        } catch (IOException | RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+    
+    /**
+     * Helper method to sanitize filename
+     */
+    private String sanitizeFileName(String fileName) {
+        if (fileName == null || fileName.trim().isEmpty()) {
+            return "note_export";
+        }
+        
+        // Remove invalid characters for filename
+        return fileName.replaceAll("[\\\\/:*?\"<>|]", "_")
+                      .replaceAll("\\s+", "_")
+                      .substring(0, Math.min(fileName.length(), 50)); // Limit length
+    }
 }

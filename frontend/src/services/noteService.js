@@ -400,6 +400,92 @@ const noteService = {
       console.error('Error fetching note stats:', error)
       throw error
     }
+  },
+
+  // GĐ8: Export note to PDF
+  exportNoteToPdf: async (noteId) => {
+    try {
+      const token = localStorage.getItem('workify_access_token')
+      const response = await fetch(`${API_CONFIG.baseUrl}/notes/${noteId}/export?format=pdf`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      if (!response.ok) {
+        throw new Error('Lỗi khi export PDF')
+      }
+
+      // Get filename from Content-Disposition header
+      const contentDisposition = response.headers.get('Content-Disposition')
+      let filename = 'note_export.pdf'
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="(.+)"/)
+        if (filenameMatch) {
+          filename = filenameMatch[1]
+        }
+      }
+
+      // Convert response to blob and trigger download
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = filename
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+
+      return { success: true, message: 'Export PDF thành công!' }
+    } catch (error) {
+      console.error('Error exporting PDF:', error)
+      throw error
+    }
+  },
+
+  // GĐ8: Export note to DOCX
+  exportNoteToDocx: async (noteId) => {
+    try {
+      const token = localStorage.getItem('workify_access_token')
+      const response = await fetch(`${API_CONFIG.baseUrl}/notes/${noteId}/export?format=docx`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      if (!response.ok) {
+        throw new Error('Lỗi khi export DOCX')
+      }
+
+      // Get filename from Content-Disposition header
+      const contentDisposition = response.headers.get('Content-Disposition')
+      let filename = 'note_export.docx'
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="(.+)"/)
+        if (filenameMatch) {
+          filename = filenameMatch[1]
+        }
+      }
+
+      // Convert response to blob and trigger download
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = filename
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+
+      return { success: true, message: 'Export DOCX thành công!' }
+    } catch (error) {
+      console.error('Error exporting DOCX:', error)
+      throw error
+    }
   }
 }
 
