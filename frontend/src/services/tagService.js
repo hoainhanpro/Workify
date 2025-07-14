@@ -30,7 +30,7 @@ const tagService = {
   },
 
   // Lấy tất cả tags của user
-  getAllTags: async () => {
+  getAllTags: async (options = {}) => {
     try {
       const token = localStorage.getItem('workify_access_token')
       
@@ -38,7 +38,8 @@ const tagService = {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`
-        }
+        },
+        signal: options.signal
       })
 
       const data = await response.json()

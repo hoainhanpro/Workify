@@ -36,9 +36,27 @@ const Notes = () => {
 
   // Load notes khi component mount
   useEffect(() => {
-    loadNotes()
-    loadNoteStats()
-    loadAvailableTags()
+    const controller = new AbortController()
+    
+    const loadData = async () => {
+      try {
+        await Promise.all([
+          loadNotes(),
+          loadNoteStats(),
+          loadAvailableTags({ signal: controller.signal })
+        ])
+      } catch (error) {
+        if (error.name !== 'AbortError') {
+          console.error('Error loading initial data:', error)
+        }
+      }
+    }
+    
+    loadData()
+    
+    return () => {
+      controller.abort()
+    }
   }, [])
 
   // Load notes when filter changes
@@ -71,12 +89,14 @@ const Notes = () => {
     }
   }
 
-  const loadAvailableTags = async () => {
+  const loadAvailableTags = async (options = {}) => {
     try {
-      const response = await tagService.getAllTags()
+      const response = await tagService.getAllTags(options)
       setAvailableTags(response.data || response)
     } catch (error) {
-      console.error('Error loading tags:', error)
+      if (error.name !== 'AbortError') {
+        console.error('Error loading tags:', error)
+      }
     }
   }
 
@@ -303,11 +323,6 @@ const Notes = () => {
     setSearchKeyword('')
   }
 
-  // Load notes khi filter thay đổi
-  useEffect(() => {
-    loadNotes()
-  }, [filterType, selectedTagIds])
-
   const openEditModal = (note) => {
     setSelectedNote(note)
     setFormData({
@@ -440,6 +455,7 @@ const Notes = () => {
               <label className="form-label small">Lọc theo tags:</label>
               <TagSelector
                 selectedTagIds={selectedTagIds}
+                availableTags={availableTags}
                 onTagsChange={(tagIds) => {
                   setSelectedTagIds(tagIds)
                   if (tagIds.length > 0) {
@@ -556,7 +572,11 @@ const Notes = () => {
                   {/* Tags display */}
                   {note.tagIds && note.tagIds.length > 0 && (
                     <div className="mb-2">
-                      <TagDisplay tagIds={note.tagIds} size="small" />
+                      <TagDisplay 
+                        tagIds={note.tagIds} 
+                        size="small" 
+                        availableTags={availableTags}
+                      />
                     </div>
                   )}
                   
@@ -631,6 +651,7 @@ const Notes = () => {
                     <label className="form-label">Tags</label>
                     <TagSelector
                       selectedTagIds={formData.tagIds}
+                      availableTags={availableTags}
                       onTagsChange={handleTagsChange}
                       placeholder="Chọn tags cho ghi chú..."
                     />
@@ -704,6 +725,7 @@ const Notes = () => {
                     <label className="form-label">Tags</label>
                     <TagSelector
                       selectedTagIds={formData.tagIds}
+                      availableTags={availableTags}
                       onTagsChange={handleTagsChange}
                       placeholder="Chọn tags cho ghi chú..."
                     />

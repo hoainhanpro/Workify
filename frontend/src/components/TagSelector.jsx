@@ -1,16 +1,29 @@
 import React, { useState, useEffect, useRef } from 'react'
 import tagService from '../services/tagService'
 
-const TagSelector = ({ selectedTagIds = [], onTagsChange, placeholder = "Chọn tags..." }) => {
-  const [tags, setTags] = useState([])
+const TagSelector = ({ 
+  selectedTagIds = [], 
+  onTagsChange, 
+  placeholder = "Chọn tags...",
+  availableTags = [] // Nhận tags từ parent component
+}) => {
+  const [tags, setTags] = useState(availableTags)
   const [isOpen, setIsOpen] = useState(false)
   const [searchKeyword, setSearchKeyword] = useState('')
   const [filteredTags, setFiltereredTags] = useState([])
   const [isLoading, setIsLoading] = useState(false)
   const dropdownRef = useRef(null)
 
+  // Update tags when availableTags prop changes
   useEffect(() => {
-    loadTags()
+    setTags(availableTags)
+  }, [availableTags])
+
+  // Only load tags if not provided via props (backward compatibility)
+  useEffect(() => {
+    if (availableTags.length === 0) {
+      loadTags()
+    }
   }, [])
 
   useEffect(() => {

@@ -111,20 +111,34 @@ export const useTasks = () => {
   }
 
   useEffect(() => {
+    const controller = new AbortController()
+    
     const initializeData = async () => {
-      // Only fetch if user is potentially authenticated
-      const token = localStorage.getItem('workify_access_token')
-      if (token) {
-        await fetchTasks()
-        await fetchStatistics()
-      } else {
-        console.warn('No authentication token found, skipping task fetch')
-        setLoading(false)
-        setError('Please login to view your tasks')
+      try {
+        // Only fetch if user is potentially authenticated
+        const token = localStorage.getItem('workify_access_token')
+        if (token) {
+          await Promise.all([
+            fetchTasks(),
+            fetchStatistics()
+          ])
+        } else {
+          console.warn('No authentication token found, skipping task fetch')
+          setLoading(false)
+          setError('Please login to view your tasks')
+        }
+      } catch (error) {
+        if (error.name !== 'AbortError') {
+          console.error('Error initializing tasks data:', error)
+        }
       }
     }
 
     initializeData()
+    
+    return () => {
+      controller.abort()
+    }
   }, [])
 
   return {
