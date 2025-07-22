@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import TagSelector from './TagSelector'
 
 const EditTaskModal = ({ show, onHide, task, onTaskUpdated, availableTags }) => {
   const [formData, setFormData] = useState({
