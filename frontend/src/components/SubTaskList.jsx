@@ -37,7 +37,6 @@ const SubTaskList = ({ subTasks = [], taskId, onSubTaskUpdate, onSubTaskDelete, 
     
     onTaskStatusUpdate(newMainTaskStatus);
   };
-
   const handleStatusChange = async (subTask, newStatus) => {
     if (readOnly || !onSubTaskUpdate) return;
     
@@ -52,6 +51,17 @@ const SubTaskList = ({ subTasks = [], taskId, onSubTaskUpdate, onSubTaskDelete, 
       updateMainTaskStatus(updatedSubTasks);
     } catch (error) {
       console.error('Error updating subtask status:', error);
+    }
+  };
+
+  const handlePriorityChange = async (subTask, newPriority) => {
+    if (readOnly || !onSubTaskUpdate) return;
+    
+    try {
+      const updatedSubTask = { ...subTask, priority: newPriority };
+      await onSubTaskUpdate(taskId, subTask.id, updatedSubTask);
+    } catch (error) {
+      console.error('Error updating subtask priority:', error);
     }
   };
 
@@ -171,22 +181,44 @@ const SubTaskList = ({ subTasks = [], taskId, onSubTaskUpdate, onSubTaskDelete, 
                   <span className={`subtask-title flex-grow-1 ${subTask.status === 'COMPLETED' ? 'text-decoration-line-through text-muted' : ''}`}>
                     {subTask.title}
                   </span>
-                  
-                  <div className="subtask-badges">                    {!readOnly && (
-                      <select
-                        className="form-select form-select-sm subtask-status-select me-2"
-                        value={subTask.status}
-                        onChange={(e) => handleStatusChange(subTask, e.target.value)}
-                      >
-                        <option value="TODO">Chưa bắt đầu</option>
-                        <option value="IN_PROGRESS">Đang thực hiện</option>
-                        <option value="COMPLETED">Hoàn thành</option>
-                      </select>
+                    <div className="subtask-badges">
+                    {!readOnly && (
+                      <div className="d-flex gap-1">
+                        <select
+                          className="form-select form-select-sm subtask-status-select"
+                          value={subTask.status}
+                          onChange={(e) => handleStatusChange(subTask, e.target.value)}
+                          title="Trạng thái"
+                        >
+                          <option value="TODO">Chưa bắt đầu</option>
+                          <option value="IN_PROGRESS">Đang thực hiện</option>
+                          <option value="COMPLETED">Hoàn thành</option>
+                        </select>
+                        
+                        <select
+                          className="form-select form-select-sm subtask-status-select"
+                          value={subTask.priority}
+                          onChange={(e) => handlePriorityChange(subTask, e.target.value)}
+                          title="Mức độ quan trọng"
+                        >
+                          <option value="LOW">Thấp</option>
+                          <option value="MEDIUM">Trung bình</option>
+                          <option value="HIGH">Cao</option>
+                        </select>
+                      </div>
                     )}
                     
-                    <span className={getPriorityBadgeClass(subTask.priority)}>
-                      {getPriorityText(subTask.priority)}
-                    </span>
+                    {readOnly && (
+                      <div className="d-flex gap-1">
+                        <span className={getStatusBadgeClass(subTask.status)}>
+                          {getStatusText(subTask.status)}
+                        </span>
+                        <span className={getPriorityBadgeClass(subTask.priority)}>
+                          {getPriorityText(subTask.priority)}
+                        </span>
+                      </div>
+                    )}
+                    
                     {isOverdue && (
                       <span className="badge bg-danger ms-1">
                         <i className="bi bi-clock"></i> Quá hạn

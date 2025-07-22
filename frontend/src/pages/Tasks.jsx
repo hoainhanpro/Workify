@@ -5,6 +5,7 @@ import CreateTaskModal from '../components/CreateTaskModal'
 import EditTaskModal from '../components/EditTaskModal'
 import ConfirmDeleteModal from '../components/ConfirmDeleteModal'
 import taskService from '../services/taskService'
+import tagService from '../services/tagService'
 
 const Tasks = () => {
   const { tasks, statistics, loading, error, createTask, updateTask, deleteTask, refreshData } = useTasks()
@@ -17,7 +18,21 @@ const Tasks = () => {
   const [showEditModal, setShowEditModal] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [selectedTask, setSelectedTask] = useState(null)
-  const [deleteLoading, setDeleteLoading] = useState(false)  // Refresh function for TaskList
+  const [deleteLoading, setDeleteLoading] = useState(false)
+  const [availableTags, setAvailableTags] = useState([])
+
+  // Load available tags
+  useEffect(() => {
+    const loadTags = async () => {
+      try {
+        const response = await tagService.getAllTags()
+        setAvailableTags(response.data || response)
+      } catch (error) {
+        console.error('Error loading tags:', error)
+      }
+    }
+    loadTags()
+  }, [])// Refresh function for TaskList
   const handleRefresh = useCallback(async () => {
     try {
       await refreshData();
@@ -362,8 +377,7 @@ const Tasks = () => {
             <div className="card-header bg-transparent">
               <h5 className="mb-0">Danh sách nhiệm vụ</h5>
             </div>
-            <div className="card-body p-0">
-              <TaskList 
+            <div className="card-body p-0">              <TaskList 
                 tasks={filteredTasks}
                 loading={loading}
                 error={error}
@@ -371,18 +385,19 @@ const Tasks = () => {
                 onTaskUpdate={updateTask}
                 onTaskEdit={handleEditTask}
                 onTaskDelete={handleDeleteClick}
-                onRefresh={handleRefresh} // Pass refresh function to TaskList
+                onRefresh={handleRefresh}
+                onCreateTask={() => setShowCreateModal(true)}
+                availableTags={availableTags}
               />
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Create Task Modal */}
+      </div>      {/* Create Task Modal */}
       <CreateTaskModal
         show={showCreateModal}
         onHide={() => setShowCreateModal(false)}
         onTaskCreated={handleCreateTask}
+        availableTags={availableTags}
       />
 
       {/* Edit Task Modal */}
@@ -394,6 +409,7 @@ const Tasks = () => {
         }}
         task={selectedTask}
         onTaskUpdated={handleUpdateTask}
+        availableTags={availableTags}
       />
 
       {/* Confirm Delete Modal */}

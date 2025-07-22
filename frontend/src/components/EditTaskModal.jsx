@@ -15,26 +15,44 @@ const EditTaskModal = ({ show, onHide, task, onTaskUpdated, availableTags }) => 
   const [error, setError] = useState('')
   const [tagInput, setTagInput] = useState('')
   const [subTaskInput, setSubTaskInput] = useState('')
-  const [showSubTasks, setShowSubTasks] = useState(false)
-  // Initialize form data when task changes
+  const [showSubTasks, setShowSubTasks] = useState(false)  // Initialize form data when task changes
   useEffect(() => {
     if (task) {
       const formattedDueDate = task.dueDate ? 
         new Date(task.dueDate).toISOString().slice(0, 16) : '';
+      
+      // Convert tag names to tag IDs for TagSelector if needed
+      let tagIds = task.tags || [];
+      if (availableTags.length > 0 && task.tags && task.tags.length > 0) {
+        // Check if tags are names (string) or IDs by trying to find matches
+        const isTagNames = task.tags.some(tag => 
+          availableTags.some(availableTag => availableTag.name === tag)
+        );
+        
+        if (isTagNames) {
+          // Convert tag names to tag IDs
+          tagIds = task.tags
+            .map(tagName => {
+              const found = availableTags.find(t => t.name === tagName);
+              return found ? found.id : null;
+            })
+            .filter(id => id !== null);
+        }
+      }
       
       setFormData({
         title: task.title || '',
         description: task.description || '',
         priority: task.priority || 'MEDIUM',
         status: task.status || 'TODO',
-        tags: task.tags || [],
+        tags: tagIds,
         dueDate: formattedDueDate,
         syncWithCalendar: task.syncWithCalendar || false,
         subTasks: task.subTasks || [],
       })
       setShowSubTasks(task.subTasks && task.subTasks.length > 0)
     }
-  }, [task])
+  }, [task, availableTags])
 
   // Close modal on ESC key
   useEffect(() => {
@@ -123,10 +141,17 @@ const EditTaskModal = ({ show, onHide, task, onTaskUpdated, availableTags }) => 
       // Validate required fields
       if (!formData.title.trim()) {
         throw new Error('Tiêu đề là bắt buộc')
-      }
-
-      // Process form data before sending
+      }      // Process form data before sending
       const processedData = { ...formData }
+      
+      // Convert tag IDs back to tag names for backend
+      if (processedData.tags && processedData.tags.length > 0 && availableTags.length > 0) {
+        processedData.tags = processedData.tags
+          .map(tagId => {
+            const found = availableTags.find(t => t.id === tagId);
+            return found ? found.name : tagId; // Fallback to original if not found
+          });
+      }
       
       // Convert due date to ISO string if provided
       if (processedData.dueDate) {
@@ -386,13 +411,13 @@ const EditTaskModal = ({ show, onHide, task, onTaskUpdated, availableTags }) => 
                 <label className="form-label">
                   Công việc con
                 </label>
-                <div className="mb-2">
-                  <button
+                <div className="mb-2">                  <button
                     type="button"
-                    className="btn btn-outline-secondary"
+                    className={`btn btn-sm ${showSubTasks ? 'btn-outline-secondary' : 'btn-outline-primary'}`}
                     onClick={() => setShowSubTasks(prev => !prev)}
                     disabled={loading}
                   >
+                    <i className={`bi ${showSubTasks ? 'bi-eye-slash' : 'bi-list-task'} me-1`}></i>
                     {showSubTasks ? 'Ẩn công việc con' : 'Hiện công việc con'}
                   </button>
                 </div>
@@ -417,10 +442,9 @@ const EditTaskModal = ({ show, onHide, task, onTaskUpdated, availableTags }) => 
                               onClick={() => handleRemoveSubTask(subTask.id)}
                               disabled={loading}
                             ></button>
-                          </div>
-                          <div className="mt-2">
-                            <div className="row">
-                              <div className="col">
+                          </div>                          <div className="mt-2">
+                            <div className="row g-2">
+                              <div className="col-md-6">
                                 <input
                                   type="text"
                                   className="form-control"
@@ -429,6 +453,30 @@ const EditTaskModal = ({ show, onHide, task, onTaskUpdated, availableTags }) => 
                                   onChange={(e) => handleSubTaskChange(subTask.id, 'title', e.target.value)}
                                   disabled={loading}
                                 />
+                              </div>
+                              <div className="col-md-3">
+                                <select
+                                  className="form-select"
+                                  value={subTask.status || 'TODO'}
+                                  onChange={(e) => handleSubTaskChange(subTask.id, 'status', e.target.value)}
+                                  disabled={loading}
+                                >
+                                  <option value="TODO">Chưa bắt đầu</option>
+                                  <option value="IN_PROGRESS">Đang thực hiện</option>
+                                  <option value="COMPLETED">Hoàn thành</option>
+                                </select>
+                              </div>
+                              <div className="col-md-3">
+                                <select
+                                  className="form-select"
+                                  value={subTask.priority || 'MEDIUM'}
+                                  onChange={(e) => handleSubTaskChange(subTask.id, 'priority', e.target.value)}
+                                  disabled={loading}
+                                >
+                                  <option value="LOW">Thấp</option>
+                                  <option value="MEDIUM">Trung bình</option>
+                                  <option value="HIGH">Cao</option>
+                                </select>
                               </div>
                             </div>
                           </div>

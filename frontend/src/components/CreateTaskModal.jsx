@@ -104,10 +104,17 @@ const CreateTaskModal = ({ show, onHide, onTaskCreated, availableTags }) => {  c
       // Validate required fields
       if (!formData.title.trim()) {
         throw new Error('Tiêu đề là bắt buộc')
-      }
-
-      // Process form data before sending
+      }      // Process form data before sending
       const processedData = { ...formData }
+      
+      // Convert tag IDs to tag names for backend
+      if (processedData.tags && processedData.tags.length > 0 && availableTags.length > 0) {
+        processedData.tags = processedData.tags
+          .map(tagId => {
+            const found = availableTags.find(t => t.id === tagId);
+            return found ? found.name : tagId; // Fallback to original if not found
+          });
+      }
       
       // Convert due date to ISO string if provided
       if (processedData.dueDate) {
@@ -333,8 +340,7 @@ const CreateTaskModal = ({ show, onHide, onTaskCreated, availableTags }) => {  c
 
               {/* Tags */}
               <div className="mb-3">
-                <label className="form-label">Thẻ tag</label>
-                <TagSelector
+                <label className="form-label">Thẻ tag</label>                <TagSelector
                   selectedTagIds={formData.tags}
                   onTagsChange={(newTagIds) => setFormData(prev => ({ ...prev, tags: newTagIds }))}
                   availableTags={availableTags}
@@ -344,13 +350,13 @@ const CreateTaskModal = ({ show, onHide, onTaskCreated, availableTags }) => {  c
               {/* Subtasks */}
               <div className="mb-3">
                 <label className="form-label">Công việc con</label>
-                <div>
-                  <button
+                <div>                  <button
                     type="button"
-                    className="btn btn-link p-0"
+                    className={`btn btn-sm ${showSubTasks ? 'btn-outline-secondary' : 'btn-outline-primary'}`}
                     onClick={() => setShowSubTasks(prev => !prev)}
                     disabled={loading}
                   >
+                    <i className={`bi ${showSubTasks ? 'bi-eye-slash' : 'bi-plus-square'} me-1`}></i>
                     {showSubTasks ? 'Ẩn công việc con' : 'Thêm công việc con'}
                   </button>
                 </div>

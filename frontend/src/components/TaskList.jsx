@@ -2,7 +2,7 @@ import React from 'react'
 import SubTaskList from './SubTaskList'
 import taskService from '../services/taskService'
 
-const TaskList = ({ tasks, loading, error, showActions = false, onTaskUpdate = null, onTaskEdit = null, onTaskDelete = null, onRefresh = null }) => {
+const TaskList = ({ tasks, loading, error, showActions = false, onTaskUpdate = null, onTaskEdit = null, onTaskDelete = null, onRefresh = null, onCreateTask = null, availableTags = [] }) => {
   const formatDate = (dateString) => {
     const date = new Date(dateString)
     return date.toLocaleDateString('vi-VN', {
@@ -149,6 +149,12 @@ const TaskList = ({ tasks, loading, error, showActions = false, onTaskUpdate = n
     return hoursUntilDue > 0 && hoursUntilDue <= 24;
   };
 
+  // Helper function to get tag name from tag ID
+  const getTagName = (tagId) => {
+    const tag = availableTags.find(t => t.id === tagId);
+    return tag ? tag.name : tagId; // Fallback to ID if tag not found
+  };
+
   if (loading) {
     return (
       <div className="text-center py-4">
@@ -170,11 +176,13 @@ const TaskList = ({ tasks, loading, error, showActions = false, onTaskUpdate = n
   }
 
   if (tasks.length === 0) {
-    return (
-      <div className="text-center py-4">
+    return (      <div className="text-center py-4">
         <i className="bi bi-inbox display-4 text-muted"></i>
         <p className="text-muted mt-2">Chưa có nhiệm vụ nào</p>
-        <button className="btn btn-primary">
+        <button 
+          className="btn btn-primary"
+          onClick={() => onCreateTask && onCreateTask()}
+        >
           <i className="bi bi-plus-circle me-2"></i>
           Tạo nhiệm vụ đầu tiên
         </button>
@@ -216,27 +224,53 @@ const TaskList = ({ tasks, loading, error, showActions = false, onTaskUpdate = n
                       <p className="mb-2 text-muted small lh-sm">{task.description}</p>
                     )}
                   </div>
-                  
-                  {/* Meta Info */}
-                  <div className="d-flex flex-column flex-sm-row gap-2 align-items-start">
-                    <small className="text-muted d-flex align-items-center">
+                    {/* Meta Info */}
+                  <div className="d-flex flex-column flex-sm-row gap-2 align-items-start">                    {/* Comment out timestamp display as requested */}
+                    {/* <small className="text-muted d-flex align-items-center">
                       <i className="bi bi-clock me-1"></i>
                       {task.status === 'COMPLETED' && task.completedAt 
                         ? `Hoàn thành lúc ${formatDate(task.completedAt)}`
                         : `Cập nhật lúc ${formatDate(task.updatedAt)}`
                       }
-                    </small>
+                    </small> */}
                     
-                    {/* Tags */}
+                    {/* Due Date */}
+                    {task.dueDate && (
+                      <small className={`d-flex align-items-center ${
+                        new Date(task.dueDate) < new Date() && task.status !== 'COMPLETED' 
+                          ? 'text-danger' : 'text-muted'
+                      }`}>
+                        <i className="bi bi-calendar3 me-1"></i>
+                        {new Date(task.dueDate) < new Date() && task.status !== 'COMPLETED' 
+                          ? 'Quá hạn: ' 
+                          : 'Hạn: '
+                        }
+                        {formatDate(task.dueDate)}
+                      </small>
+                    )}
+                    
+                      {/* Tags */}
                     {task.tags && task.tags.length > 0 && (
                       <div className="d-flex flex-wrap gap-1">
                         {task.tags.slice(0, 3).map((tag, index) => (
-                          <span key={index} className="badge bg-light text-dark small border">
-                            #{tag}
+                          <span 
+                            key={index} 
+                            className="badge text-dark small" 
+                            style={{ 
+                              backgroundColor: '#e3f2fd', 
+                              border: '1px solid #bbdefb',
+                              fontSize: '0.7rem'
+                            }}
+                          >
+                            <i className="bi bi-tag me-1"></i>
+                            {getTagName(tag)}
                           </span>
                         ))}
                         {task.tags.length > 3 && (
-                          <span className="badge bg-light text-dark small border">
+                          <span 
+                            className="badge bg-secondary text-white small" 
+                            style={{ fontSize: '0.7rem' }}
+                          >
                             +{task.tags.length - 3}
                           </span>
                         )}
