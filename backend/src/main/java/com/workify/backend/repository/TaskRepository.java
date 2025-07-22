@@ -48,4 +48,17 @@ public interface TaskRepository extends MongoRepository<Task, String> {
     // Find tasks by user ID and tag ID
     @Query("{ 'userId': ?0, 'tags': { $elemMatch: { $eq: ?1 } } }")
     List<Task> findByUserIdAndTagId(String userId, String tagId);
+
+    // Calendar and due date queries
+    @Query("{ 'userId': ?0, 'dueDate': { $gte: ?1, $lte: ?2 } }")
+    List<Task> findByUserIdAndDueDateBetween(String userId, java.time.LocalDateTime from, java.time.LocalDateTime to);
+
+    @Query("{ 'userId': ?0, 'dueDate': { $lt: ?1 }, 'status': { $ne: 'COMPLETED' } }")
+    List<Task> findOverdueTasksByUserId(String userId, java.time.LocalDateTime now);
+
+    @Query("{ 'userId': ?0, 'syncWithCalendar': true }")
+    List<Task> findByUserIdAndSyncWithCalendarTrue(String userId);
+
+    @Query("{ 'userId': ?0, 'googleCalendarEventId': { $exists: true, $ne: null } }")
+    List<Task> findByUserIdWithGoogleCalendarEventId(String userId);
 }

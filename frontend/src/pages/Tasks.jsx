@@ -7,7 +7,7 @@ import ConfirmDeleteModal from '../components/ConfirmDeleteModal'
 import taskService from '../services/taskService'
 
 const Tasks = () => {
-  const { tasks, statistics, loading, error, createTask, updateTask, deleteTask } = useTasks()
+  const { tasks, statistics, loading, error, createTask, updateTask, deleteTask, refreshData } = useTasks()
   const [filter, setFilter] = useState('ALL')
   const [searchTerm, setSearchTerm] = useState('')
   const [searchResults, setSearchResults] = useState([])
@@ -17,7 +17,14 @@ const Tasks = () => {
   const [showEditModal, setShowEditModal] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [selectedTask, setSelectedTask] = useState(null)
-  const [deleteLoading, setDeleteLoading] = useState(false)
+  const [deleteLoading, setDeleteLoading] = useState(false)  // Refresh function for TaskList
+  const handleRefresh = useCallback(async () => {
+    try {
+      await refreshData();
+    } catch (error) {
+      console.error('Error refreshing tasks:', error);
+    }
+  }, [refreshData]);
 
   // Determine which tasks to display
   const displayTasks = isSearching ? searchResults : tasks
@@ -364,6 +371,7 @@ const Tasks = () => {
                 onTaskUpdate={updateTask}
                 onTaskEdit={handleEditTask}
                 onTaskDelete={handleDeleteClick}
+                onRefresh={handleRefresh} // Pass refresh function to TaskList
               />
             </div>
           </div>

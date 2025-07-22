@@ -25,6 +25,8 @@ public class OAuthToken {
 
     private String refreshToken; // Google refresh token (bắt buộc lưu để có thể refresh)
 
+    private String accessToken; // Google access token (for immediate use)
+
     private LocalDateTime expiresAt; // Thời điểm hết hạn refresh token
 
     private String scope; // "openid email profile" hoặc thêm "drive"
@@ -36,12 +38,14 @@ public class OAuthToken {
     private LocalDateTime updatedAt;
 
     // Constructors
-    public OAuthToken() {}
+    public OAuthToken() {
+    }
 
-    public OAuthToken(String userId, String provider, String refreshToken, String scope) {
+    public OAuthToken(String userId, String provider, String refreshToken, String accessToken, String scope) {
         this.userId = userId;
         this.provider = provider;
         this.refreshToken = refreshToken;
+        this.accessToken = accessToken;
         this.scope = scope;
     }
 
@@ -76,6 +80,14 @@ public class OAuthToken {
 
     public void setRefreshToken(String refreshToken) {
         this.refreshToken = refreshToken;
+    }
+
+    public String getAccessToken() {
+        return accessToken;
+    }
+
+    public void setAccessToken(String accessToken) {
+        this.accessToken = accessToken;
     }
 
     public LocalDateTime getExpiresAt() {

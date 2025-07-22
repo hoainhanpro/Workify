@@ -1,6 +1,8 @@
 import React from 'react'
+import SubTaskList from './SubTaskList'
+import taskService from '../services/taskService'
 
-const TaskList = ({ tasks, loading, error, showActions = false, onTaskUpdate = null, onTaskEdit = null, onTaskDelete = null }) => {
+const TaskList = ({ tasks, loading, error, showActions = false, onTaskUpdate = null, onTaskEdit = null, onTaskDelete = null, onRefresh = null }) => {
   const formatDate = (dateString) => {
     const date = new Date(dateString)
     return date.toLocaleDateString('vi-VN', {
@@ -84,6 +86,56 @@ const TaskList = ({ tasks, loading, error, showActions = false, onTaskUpdate = n
       onTaskDelete(task)
     }
   }
+
+  const handleSubTaskUpdate = async (taskId, subTaskId, subTaskData) => {
+    try {
+      await taskService.updateSubTask(taskId, subTaskId, subTaskData);
+      if (onRefresh) {
+        onRefresh();
+      }
+    } catch (error) {
+      console.error('Error updating subtask:', error);
+      throw error;
+    }
+  };
+
+  const handleSubTaskDelete = async (taskId, subTaskId) => {
+    try {
+      await taskService.deleteSubTask(taskId, subTaskId);
+      if (onRefresh) {
+        onRefresh();
+      }
+    } catch (error) {
+      console.error('Error deleting subtask:', error);
+      throw error;
+    }
+  };
+
+  const handleCalendarSync = async (taskId, enabled) => {
+    try {
+      await taskService.updateCalendarSync(taskId, enabled);
+      if (onRefresh) {
+        onRefresh();
+      }
+    } catch (error) {
+      console.error('Error updating calendar sync:', error);
+      alert('Lỗi cập nhật đồng bộ lịch: ' + error.message);
+    }
+  };
+
+  const isOverdue = (dueDate) => {
+    if (!dueDate) return false;
+    return new Date(dueDate) < new Date();
+  };
+
+  const isDueSoon = (dueDate) => {
+    if (!dueDate) return false;
+    const now = new Date();
+    const due = new Date(dueDate);
+    const timeDiff = due.getTime() - now.getTime();
+    const hoursUntilDue = timeDiff / (1000 * 3600);
+    return hoursUntilDue > 0 && hoursUntilDue <= 24;
+  };
 
   if (loading) {
     return (
@@ -248,6 +300,61 @@ const TaskList = ({ tasks, loading, error, showActions = false, onTaskUpdate = n
               </div>
             </div>
           </div>
+
+          {/* Due Date and Calendar Sync */}
+          {(task.dueDate || task.syncWithCalendar) && (
+            <div className="d-flex flex-column flex-sm-row gap-2 align-items-start mt-2">
+              {task.dueDate && (
+                <small className={`d-flex align-items-center ${
+                  isOverdue(task.dueDate) ? 'text-danger' : 
+                  isDueSoon(task.dueDate) ? 'text-warning' : 'text-muted'
+                }`}>
+                  <i className={`bi ${
+                    isOverdue(task.dueDate) ? 'bi-exclamation-triangle-fill' : 
+                    isDueSoon(task.dueDate) ? 'bi-clock-fill' : 'bi-calendar3'
+                  } me-1`}></i>
+                  {isOverdue(task.dueDate) ? 'Quá hạn: ' : 
+                   isDueSoon(task.dueDate) ? 'Sắp đến hạn: ' : 'Hạn: '}
+                  {formatDate(task.dueDate)}
+                </small>
+              )}
+              
+              {task.syncWithCalendar && (
+                <div className="d-flex align-items-center">
+                  <small className="text-success me-2">
+                    <i className="bi bi-calendar-check me-1"></i>
+                    Đồng bộ lịch
+                  </small>
+                  {task.googleCalendarEventId && (
+                    <small className="text-muted">
+                      <i className="bi bi-link-45deg"></i>
+                    </small>
+                  )}
+                  {showActions && (
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-link p-0 ms-2"
+                      onClick={() => handleCalendarSync(task.id, !task.syncWithCalendar)}
+                      title={task.syncWithCalendar ? 'Tắt đồng bộ lịch' : 'Bật đồng bộ lịch'}
+                    >
+                      <i className={`bi ${task.syncWithCalendar ? 'bi-calendar-x' : 'bi-calendar-plus'} text-muted`}></i>
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* SubTasks */}
+          {task.subTasks && task.subTasks.length > 0 && (
+            <SubTaskList
+              subTasks={task.subTasks}
+              taskId={task.id}
+              onSubTaskUpdate={handleSubTaskUpdate}
+              onSubTaskDelete={handleSubTaskDelete}
+              readOnly={!showActions}
+            />
+          )}
         </div>
       ))}
     </div>

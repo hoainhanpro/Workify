@@ -1,28 +1,38 @@
 import React, { useState, useEffect } from 'react'
 import TagSelector from './TagSelector'
 
-const EditTaskModal = ({ show, onHide, task, onTaskUpdated, availableTags }) => {
-  const [formData, setFormData] = useState({
+const EditTaskModal = ({ show, onHide, task, onTaskUpdated, availableTags }) => {  const [formData, setFormData] = useState({
     title: '',
     description: '',
     priority: 'MEDIUM',
     status: 'TODO',
-    tags: []
+    tags: [],
+    dueDate: '',
+    syncWithCalendar: false,
+    subTasks: [],
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [tagInput, setTagInput] = useState('')
-
+  const [subTaskInput, setSubTaskInput] = useState('')
+  const [showSubTasks, setShowSubTasks] = useState(false)
   // Initialize form data when task changes
   useEffect(() => {
     if (task) {
+      const formattedDueDate = task.dueDate ? 
+        new Date(task.dueDate).toISOString().slice(0, 16) : '';
+      
       setFormData({
         title: task.title || '',
         description: task.description || '',
         priority: task.priority || 'MEDIUM',
         status: task.status || 'TODO',
-        tags: task.tags || []
+        tags: task.tags || [],
+        dueDate: formattedDueDate,
+        syncWithCalendar: task.syncWithCalendar || false,
+        subTasks: task.subTasks || [],
       })
+      setShowSubTasks(task.subTasks && task.subTasks.length > 0)
     }
   }, [task])
 
@@ -64,13 +74,46 @@ const EditTaskModal = ({ show, onHide, task, onTaskUpdated, availableTags }) => 
     }
   }
 
-  const handleRemoveTag = (tagToRemove) => {
+  const handleRemoveTag = (tagId) => {
     setFormData(prev => ({
       ...prev,
-      tags: prev.tags.filter(tag => tag !== tagToRemove)
+      tags: prev.tags.filter(tag => tag !== tagId)
     }))
   }
 
+  const handleAddSubTask = (e) => {
+    e.preventDefault()
+    if (subTaskInput.trim()) {
+      const newSubTask = {
+        id: Date.now().toString(), // Temporary ID for new subtasks
+        title: subTaskInput.trim(),
+        description: '',
+        status: 'TODO',
+        priority: 'MEDIUM',
+      }
+      setFormData(prev => ({
+        ...prev,
+        subTasks: [...prev.subTasks, newSubTask]
+      }))
+      setSubTaskInput('')
+    }
+  }
+
+  const handleRemoveSubTask = (subTaskId) => {
+    setFormData(prev => ({
+      ...prev,
+      subTasks: prev.subTasks.filter(subTask => subTask.id !== subTaskId)
+    }))
+  }
+
+  const handleSubTaskChange = (subTaskId, field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      subTasks: prev.subTasks.map(subTask =>
+        subTask.id === subTaskId ? { ...subTask, [field]: value } : subTask
+      )
+    }))
+  }
   const handleSubmit = async (e) => {
     e.preventDefault()
     setLoading(true)
@@ -82,7 +125,27 @@ const EditTaskModal = ({ show, onHide, task, onTaskUpdated, availableTags }) => 
         throw new Error('Tiêu đề là bắt buộc')
       }
 
-      const result = await onTaskUpdated(task.id, formData)
+      // Process form data before sending
+      const processedData = { ...formData }
+      
+      // Convert due date to ISO string if provided
+      if (processedData.dueDate) {
+        const date = new Date(processedData.dueDate)
+        processedData.dueDate = date.toISOString()
+      }
+      
+      // Process subtasks due dates
+      if (processedData.subTasks && processedData.subTasks.length > 0) {
+        processedData.subTasks = processedData.subTasks.map(subTask => {
+          if (subTask.dueDate) {
+            const date = new Date(subTask.dueDate)
+            return { ...subTask, dueDate: date.toISOString() }
+          }
+          return subTask
+        })
+      }
+
+      const result = await onTaskUpdated(task.id, processedData)
       
       if (result && result.success) {
         onHide()
@@ -217,6 +280,51 @@ const EditTaskModal = ({ show, onHide, task, onTaskUpdated, availableTags }) => 
                 </div>
               </div>
 
+              {/* Due Date and Calendar Sync */}
+              <div className="row">
+                <div className="col-md-8">
+                  <div className="mb-3">
+                    <label className="form-label">Hạn hoàn thành</label>
+                    <input
+                      type="datetime-local"
+                      className="form-control"
+                      name="dueDate"
+                      value={formData.dueDate}
+                      onChange={handleInputChange}
+                      disabled={loading}
+                    />
+                    <div className="form-text">
+                      Chọn ngày và giờ hoàn thành nhiệm vụ
+                    </div>
+                  </div>
+                </div>
+                <div className="col-md-4">
+                  <div className="mb-3">
+                    <label className="form-label">&nbsp;</label>
+                    <div className="form-check">
+                      <input
+                        className="form-check-input"
+                        type="checkbox"
+                        id="editSyncWithCalendar"
+                        name="syncWithCalendar"
+                        checked={formData.syncWithCalendar}
+                        onChange={(e) => setFormData(prev => ({ ...prev, syncWithCalendar: e.target.checked }))
+                        }
+                        disabled={loading || !formData.dueDate}
+                      />
+                      <label className="form-check-label" htmlFor="editSyncWithCalendar">
+                        Đồng bộ với Google Calendar
+                      </label>
+                    </div>
+                    {!formData.dueDate && (
+                      <div className="form-text text-muted">
+                        Cần có hạn hoàn thành để đồng bộ
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
               {/* Tags */}
               <div className="mb-3">
                 <label className="form-label">Thẻ tag</label>
@@ -271,6 +379,93 @@ const EditTaskModal = ({ show, onHide, task, onTaskUpdated, availableTags }) => 
                   availableTags={availableTags}
                   disabled={loading}
                 />
+              </div>
+
+              {/* Subtasks */}
+              <div className="mb-3">
+                <label className="form-label">
+                  Công việc con
+                </label>
+                <div className="mb-2">
+                  <button
+                    type="button"
+                    className="btn btn-outline-secondary"
+                    onClick={() => setShowSubTasks(prev => !prev)}
+                    disabled={loading}
+                  >
+                    {showSubTasks ? 'Ẩn công việc con' : 'Hiện công việc con'}
+                  </button>
+                </div>
+
+                {showSubTasks && (
+                  <div className="border p-3 rounded">
+                    {/* Existing subtasks */}
+                    {formData.subTasks.length === 0 ? (
+                      <div className="text-center text-muted py-3">
+                        Chưa có công việc con nào. Nhấn vào nút bên dưới để thêm.
+                      </div>
+                    ) : (
+                      formData.subTasks.map((subTask, index) => (
+                        <div key={subTask.id} className="border-bottom py-2">
+                          <div className="d-flex justify-content-between align-items-center">
+                            <div>
+                              <strong>Công việc con {index + 1}:</strong> {subTask.title}
+                            </div>
+                            <button
+                              type="button"
+                              className="btn-close"
+                              onClick={() => handleRemoveSubTask(subTask.id)}
+                              disabled={loading}
+                            ></button>
+                          </div>
+                          <div className="mt-2">
+                            <div className="row">
+                              <div className="col">
+                                <input
+                                  type="text"
+                                  className="form-control"
+                                  placeholder="Tiêu đề công việc con"
+                                  value={subTask.title}
+                                  onChange={(e) => handleSubTaskChange(subTask.id, 'title', e.target.value)}
+                                  disabled={loading}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+
+                    {/* New subtask input */}                    <div className="mt-3">
+                      <div>
+                        <div className="input-group">
+                          <input
+                            type="text"
+                            className="form-control"
+                            placeholder="Nhập công việc con và nhấn Enter..."
+                            value={subTaskInput}
+                            onChange={(e) => setSubTaskInput(e.target.value)}
+                            disabled={loading}
+                            onKeyPress={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault()
+                                handleAddSubTask(e)
+                              }
+                            }}
+                          />
+                          <button 
+                            type="button"
+                            className="btn btn-primary"
+                            disabled={loading}
+                            onClick={handleAddSubTask}
+                          >
+                            <i className="bi bi-plus"></i>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 

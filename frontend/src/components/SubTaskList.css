@@ -1,0 +1,118 @@
+.subtask-list {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 12px;
+  background-color: #f8f9fa;
+  margin-top: 8px;
+}
+
+.subtask-list-empty {
+  padding: 8px 12px;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  margin-top: 8px;
+}
+
+.subtask-summary {
+  border-bottom: 1px solid #e0e0e0;
+  padding-bottom: 8px;
+}
+
+.subtask-items {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.subtask-item {
+  padding: 8px 0;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.subtask-item:last-child {
+  border-bottom: none;
+}
+
+.subtask-item.completed {
+  opacity: 0.7;
+}
+
+.subtask-header {
+  min-height: 32px;
+}
+
+.subtask-title {
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.subtask-badges .badge {
+  font-size: 0.7rem;
+}
+
+.subtask-actions .btn {
+  color: #6c757d;
+  font-size: 0.8rem;
+}
+
+.subtask-actions .btn:hover {
+  color: #495057;
+}
+
+.subtask-description {
+  padding-left: 24px;
+  font-style: italic;
+}
+
+.subtask-meta {
+  padding-left: 24px;
+}
+
+.subtask-meta .badge {
+  font-size: 0.65rem;
+}
+
+/* Progress bar styling */
+.progress {
+  background-color: #e9ecef;
+}
+
+/* Responsive design */
+@media (max-width: 576px) {
+  .subtask-list {
+    padding: 8px;
+  }
+  
+  .subtask-title {
+    font-size: 0.85rem;
+  }
+  
+  .subtask-badges {
+    flex-direction: column;
+    align-items: flex-end;
+  }
+  
+  .subtask-badges .badge {
+    margin-bottom: 2px;
+  }
+}
+
+/* Hover effects */
+.subtask-item:hover {
+  background-color: rgba(0, 123, 255, 0.05);
+  border-radius: 4px;
+}
+
+/* Animation for completion */
+.subtask-item.completed .subtask-title {
+  transition: all 0.3s ease;
+}
+
+/* Custom checkbox styling */
+.subtask-item .form-check-input {
+  cursor: pointer;
+}
+
+.subtask-item .form-check-input:checked {
+  background-color: #28a745;
+  border-color: #28a745;
+}

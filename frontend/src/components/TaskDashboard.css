@@ -1,0 +1,126 @@
+.task-dashboard {
+  padding: 0;
+}
+
+.task-dashboard .card {
+  border: none;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  transition: transform 0.2s ease-in-out;
+}
+
+.task-dashboard .card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.task-dashboard .card-header {
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #dee2e6;
+  font-weight: 600;
+}
+
+.task-dashboard .card-header.bg-danger {
+  background-color: #dc3545 !important;
+}
+
+.task-dashboard .display-4 {
+  font-size: 2.5rem;
+}
+
+.task-dashboard .list-group-item {
+  border-left: none;
+  border-right: none;
+}
+
+.task-dashboard .list-group-item:first-child {
+  border-top: none;
+}
+
+.task-dashboard .list-group-item:last-child {
+  border-bottom: none;
+}
+
+.task-dashboard .badge {
+  font-size: 0.75rem;
+}
+
+/* Progress indicators */
+.task-dashboard .progress {
+  height: 8px;
+}
+
+/* Calendar sync section */
+.task-dashboard .alert-info {
+  background-color: #e3f2fd;
+  border-color: #bbdefb;
+  color: #1976d2;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .task-dashboard .display-4 {
+    font-size: 2rem;
+  }
+  
+  .task-dashboard .card-title {
+    font-size: 1rem;
+  }
+  
+  .task-dashboard h2 {
+    font-size: 1.5rem;
+  }
+}
+
+/* Animation for loading states */
+.task-dashboard .spinner-border-sm {
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+/* Custom styling for status badges */
+.task-dashboard .bg-secondary {
+  background-color: #6c757d !important;
+}
+
+.task-dashboard .bg-warning {
+  background-color: #ffc107 !important;
+  color: #000 !important;
+}
+
+.task-dashboard .bg-success {
+  background-color: #198754 !important;
+}
+
+.task-dashboard .bg-info {
+  background-color: #0dcaf0 !important;
+  color: #000 !important;
+}
+
+.task-dashboard .bg-danger {
+  background-color: #dc3545 !important;
+}
+
+/* Enhanced card styling */
+.task-dashboard .card-body {
+  padding: 1.5rem;
+}
+
+.task-dashboard .text-primary {
+  color: #0d6efd !important;
+}
+
+.task-dashboard .text-warning {
+  color: #fd7e14 !important;
+}
+
+.task-dashboard .text-success {
+  color: #198754 !important;
+}
+
+.task-dashboard .text-info {
+  color: #0dcaf0 !important;
+}
+
+.task-dashboard .text-danger {
+  color: #dc3545 !important;
+}

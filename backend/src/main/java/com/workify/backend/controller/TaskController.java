@@ -220,6 +220,30 @@ public class TaskController {
             task.setUserId(userId);
             task.setTags(taskRequest.getTags());
 
+            // Handle due date and calendar sync
+            task.setDueDate(taskRequest.getDueDate());
+            task.setSyncWithCalendar(
+                    taskRequest.getSyncWithCalendar() != null ? taskRequest.getSyncWithCalendar() : false);
+
+            // Handle SubTasks if provided
+            if (taskRequest.getSubTasks() != null && !taskRequest.getSubTasks().isEmpty()) {
+                List<Task.SubTask> subTasks = new java.util.ArrayList<>();
+                for (TaskRequest.SubTaskRequest subTaskReq : taskRequest.getSubTasks()) {
+                    Task.SubTask subTask = new Task.SubTask();
+                    subTask.setId(java.util.UUID.randomUUID().toString());
+                    subTask.setTitle(subTaskReq.getTitle());
+                    subTask.setDescription(subTaskReq.getDescription());
+                    subTask.setStatus(subTaskReq.getStatus() != null ? subTaskReq.getStatus() : Task.TaskStatus.TODO);
+                    subTask.setPriority(
+                            subTaskReq.getPriority() != null ? subTaskReq.getPriority() : Task.TaskPriority.MEDIUM);
+                    subTask.setDueDate(subTaskReq.getDueDate());
+                    subTask.setCreatedAt(java.time.LocalDateTime.now());
+                    subTask.setUpdatedAt(java.time.LocalDateTime.now());
+                    subTasks.add(subTask);
+                }
+                task.setSubTasks(subTasks);
+            }
+
             Task savedTask = taskService.createTask(task);
 
             response.put("success", true);
@@ -250,6 +274,29 @@ public class TaskController {
             updatedTask.setStatus(taskRequest.getStatus());
             updatedTask.setPriority(taskRequest.getPriority());
             updatedTask.setTags(taskRequest.getTags());
+
+            // Handle due date and calendar sync
+            updatedTask.setDueDate(taskRequest.getDueDate());
+            updatedTask.setSyncWithCalendar(taskRequest.getSyncWithCalendar());
+
+            // Handle SubTasks if provided (replace existing)
+            if (taskRequest.getSubTasks() != null) {
+                List<Task.SubTask> subTasks = new java.util.ArrayList<>();
+                for (TaskRequest.SubTaskRequest subTaskReq : taskRequest.getSubTasks()) {
+                    Task.SubTask subTask = new Task.SubTask();
+                    subTask.setId(java.util.UUID.randomUUID().toString());
+                    subTask.setTitle(subTaskReq.getTitle());
+                    subTask.setDescription(subTaskReq.getDescription());
+                    subTask.setStatus(subTaskReq.getStatus() != null ? subTaskReq.getStatus() : Task.TaskStatus.TODO);
+                    subTask.setPriority(
+                            subTaskReq.getPriority() != null ? subTaskReq.getPriority() : Task.TaskPriority.MEDIUM);
+                    subTask.setDueDate(subTaskReq.getDueDate());
+                    subTask.setCreatedAt(java.time.LocalDateTime.now());
+                    subTask.setUpdatedAt(java.time.LocalDateTime.now());
+                    subTasks.add(subTask);
+                }
+                updatedTask.setSubTasks(subTasks);
+            }
 
             Optional<Task> result = taskService.updateTask(taskId, userId, updatedTask);
 
@@ -292,6 +339,480 @@ public class TaskController {
         } catch (Exception e) {
             response.put("success", false);
             response.put("message", "Failed to delete task: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    // ============= SUBTASK ENDPOINTS =============
+
+    /**
+     * Add SubTask to existing Task
+     */
+    @PostMapping("/{taskId}/subtasks")
+    public ResponseEntity<Map<String, Object>> addSubTask(
+            @PathVariable String taskId,
+            @Valid @RequestBody TaskRequest.SubTaskRequest subTaskRequest) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            String userId = SecurityUtils.getCurrentUserId();
+
+            Task.SubTask subTask = new Task.SubTask();
+            subTask.setTitle(subTaskRequest.getTitle());
+            subTask.setDescription(subTaskRequest.getDescription());
+            subTask.setStatus(subTaskRequest.getStatus() != null ? subTaskRequest.getStatus() : Task.TaskStatus.TODO);
+            subTask.setPriority(
+                    subTaskRequest.getPriority() != null ? subTaskRequest.getPriority() : Task.TaskPriority.MEDIUM);
+            subTask.setDueDate(subTaskRequest.getDueDate());
+
+            Optional<Task> result = taskService.addSubTask(taskId, userId, subTask);
+
+            if (result.isPresent()) {
+                response.put("success", true);
+                response.put("message", "SubTask added successfully");
+                response.put("data", new TaskResponse(result.get()));
+                return ResponseEntity.status(HttpStatus.CREATED).body(response);
+            } else {
+                response.put("success", false);
+                response.put("message", "Task not found or you don't have permission to modify it");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+            }
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Failed to add SubTask: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    /**
+     * Update SubTask
+     */
+    @PutMapping("/{taskId}/subtasks/{subTaskId}")
+    public ResponseEntity<Map<String, Object>> updateSubTask(
+            @PathVariable String taskId,
+            @PathVariable String subTaskId,
+            @Valid @RequestBody TaskRequest.SubTaskRequest subTaskRequest) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            String userId = SecurityUtils.getCurrentUserId();
+
+            Task.SubTask updatedSubTask = new Task.SubTask();
+            updatedSubTask.setTitle(subTaskRequest.getTitle());
+            updatedSubTask.setDescription(subTaskRequest.getDescription());
+            updatedSubTask.setStatus(subTaskRequest.getStatus());
+            updatedSubTask.setPriority(subTaskRequest.getPriority());
+            updatedSubTask.setDueDate(subTaskRequest.getDueDate());
+
+            Optional<Task> result = taskService.updateSubTask(taskId, userId, subTaskId, updatedSubTask);
+
+            if (result.isPresent()) {
+                response.put("success", true);
+                response.put("message", "SubTask updated successfully");
+                response.put("data", new TaskResponse(result.get()));
+                return ResponseEntity.ok(response);
+            } else {
+                response.put("success", false);
+                response.put("message", "Task or SubTask not found, or you don't have permission to modify it");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+            }
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Failed to update SubTask: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    /**
+     * Delete SubTask
+     */
+    @DeleteMapping("/{taskId}/subtasks/{subTaskId}")
+    public ResponseEntity<Map<String, Object>> deleteSubTask(
+            @PathVariable String taskId,
+            @PathVariable String subTaskId) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            String userId = SecurityUtils.getCurrentUserId();
+            Optional<Task> result = taskService.deleteSubTask(taskId, userId, subTaskId);
+
+            if (result.isPresent()) {
+                response.put("success", true);
+                response.put("message", "SubTask deleted successfully");
+                response.put("data", new TaskResponse(result.get()));
+                return ResponseEntity.ok(response);
+            } else {
+                response.put("success", false);
+                response.put("message", "Task or SubTask not found, or you don't have permission to delete it");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+            }
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Failed to delete SubTask: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    /**
+     * Get specific SubTask
+     */
+    @GetMapping("/{taskId}/subtasks/{subTaskId}")
+    public ResponseEntity<Map<String, Object>> getSubTask(
+            @PathVariable String taskId,
+            @PathVariable String subTaskId) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            String userId = SecurityUtils.getCurrentUserId();
+            Optional<Task.SubTask> subTask = taskService.getSubTask(taskId, userId, subTaskId);
+
+            if (subTask.isPresent()) {
+                response.put("success", true);
+                response.put("data", new TaskResponse.SubTaskResponse(subTask.get()));
+                return ResponseEntity.ok(response);
+            } else {
+                response.put("success", false);
+                response.put("message", "SubTask not found or you don't have permission to access it");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+            }
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Failed to retrieve SubTask: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    // ============= CALENDAR ENDPOINTS =============
+
+    /**
+     * Get tasks with due dates in range
+     */
+    @GetMapping("/due-dates")
+    public ResponseEntity<Map<String, Object>> getTasksWithDueDates(
+            @RequestParam @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME) java.time.LocalDateTime from,
+            @RequestParam @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME) java.time.LocalDateTime to) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            String userId = SecurityUtils.getCurrentUserId();
+            List<Task> tasks = taskService.getTasksWithDueDates(userId, from, to);
+            List<TaskResponse> taskResponses = tasks.stream()
+                    .map(TaskResponse::new)
+                    .collect(java.util.stream.Collectors.toList());
+
+            response.put("success", true);
+            response.put("data", taskResponses);
+            response.put("count", taskResponses.size());
+            response.put("dateRange", Map.of("from", from, "to", to));
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Failed to retrieve tasks with due dates: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    /**
+     * Get overdue tasks
+     */
+    @GetMapping("/overdue")
+    public ResponseEntity<Map<String, Object>> getOverdueTasks() {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            String userId = SecurityUtils.getCurrentUserId();
+            List<Task> tasks = taskService.getOverdueTasks(userId);
+            List<TaskResponse> taskResponses = tasks.stream()
+                    .map(TaskResponse::new)
+                    .collect(java.util.stream.Collectors.toList());
+
+            response.put("success", true);
+            response.put("data", taskResponses);
+            response.put("count", taskResponses.size());
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Failed to retrieve overdue tasks: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    /**
+     * Update calendar sync setting for task
+     */
+    @PutMapping("/{taskId}/calendar/sync")
+    public ResponseEntity<Map<String, Object>> updateCalendarSync(
+            @PathVariable String taskId,
+            @RequestParam Boolean enabled) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            String userId = SecurityUtils.getCurrentUserId();
+            Optional<Task> result = taskService.updateCalendarSync(taskId, userId, enabled);
+
+            if (result.isPresent()) {
+                response.put("success", true);
+                response.put("message", "Calendar sync updated successfully");
+                response.put("data", new TaskResponse(result.get()));
+                return ResponseEntity.ok(response);
+            } else {
+                response.put("success", false);
+                response.put("message", "Task not found or you don't have permission to modify it");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+            }
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Failed to update calendar sync: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    // ============= ANALYTICS & DASHBOARD ENDPOINTS =============
+
+    /**
+     * Get task analytics for dashboard
+     */
+    @GetMapping("/analytics")
+    public ResponseEntity<Map<String, Object>> getTaskAnalytics() {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            String userId = SecurityUtils.getCurrentUserId();
+            Map<String, Object> analytics = taskService.getTaskAnalytics(userId);
+
+            response.put("success", true);
+            response.put("data", analytics);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Failed to retrieve task analytics: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    /**
+     * Get tasks due today
+     */
+    @GetMapping("/due-today")
+    public ResponseEntity<Map<String, Object>> getTasksDueToday() {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            String userId = SecurityUtils.getCurrentUserId();
+            List<Task> tasks = taskService.getTasksDueToday(userId);
+            List<TaskResponse> taskResponses = tasks.stream()
+                    .map(TaskResponse::new)
+                    .collect(java.util.stream.Collectors.toList());
+
+            response.put("success", true);
+            response.put("data", taskResponses);
+            response.put("count", taskResponses.size());
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Failed to retrieve tasks due today: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    /**
+     * Get tasks due this week
+     */
+    @GetMapping("/due-this-week")
+    public ResponseEntity<Map<String, Object>> getTasksDueThisWeek() {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            String userId = SecurityUtils.getCurrentUserId();
+            List<Task> tasks = taskService.getTasksDueThisWeek(userId);
+            List<TaskResponse> taskResponses = tasks.stream()
+                    .map(TaskResponse::new)
+                    .collect(java.util.stream.Collectors.toList());
+
+            response.put("success", true);
+            response.put("data", taskResponses);
+            response.put("count", taskResponses.size());
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Failed to retrieve tasks due this week: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    /**
+     * Auto-update task status based on subtasks
+     */
+    @PostMapping("/{taskId}/auto-update-status")
+    public ResponseEntity<Map<String, Object>> autoUpdateTaskStatus(@PathVariable String taskId) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            String userId = SecurityUtils.getCurrentUserId();
+            Optional<Task> result = taskService.autoUpdateTaskStatus(taskId, userId);
+
+            if (result.isPresent()) {
+                response.put("success", true);
+                response.put("message", "Task status updated successfully");
+                response.put("data", new TaskResponse(result.get()));
+                return ResponseEntity.ok(response);
+            } else {
+                response.put("success", false);
+                response.put("message", "Task not found or you don't have permission to modify it");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+            }
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Failed to auto-update task status: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    // ============= VALIDATION ENDPOINTS =============
+
+    /**
+     * Validate task data
+     */
+    @PostMapping("/validate")
+    public ResponseEntity<Map<String, Object>> validateTask(@Valid @RequestBody TaskRequest taskRequest) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            // Convert TaskRequest to Task for validation
+            Task task = new Task();
+            task.setTitle(taskRequest.getTitle());
+            task.setDescription(taskRequest.getDescription());
+            task.setStatus(taskRequest.getStatus() != null ? taskRequest.getStatus() : Task.TaskStatus.TODO);
+            task.setPriority(taskRequest.getPriority() != null ? taskRequest.getPriority() : Task.TaskPriority.MEDIUM);
+            task.setDueDate(taskRequest.getDueDate());
+            task.setSyncWithCalendar(taskRequest.getSyncWithCalendar());
+
+            // Convert and validate SubTasks
+            if (taskRequest.getSubTasks() != null) {
+                List<Task.SubTask> subTasks = new java.util.ArrayList<>();
+                for (TaskRequest.SubTaskRequest subTaskReq : taskRequest.getSubTasks()) {
+                    Task.SubTask subTask = new Task.SubTask();
+                    subTask.setTitle(subTaskReq.getTitle());
+                    subTask.setDescription(subTaskReq.getDescription());
+                    subTask.setStatus(subTaskReq.getStatus() != null ? subTaskReq.getStatus() : Task.TaskStatus.TODO);
+                    subTask.setPriority(
+                            subTaskReq.getPriority() != null ? subTaskReq.getPriority() : Task.TaskPriority.MEDIUM);
+                    subTask.setDueDate(subTaskReq.getDueDate());
+                    subTasks.add(subTask);
+                }
+                task.setSubTasks(subTasks);
+            }
+
+            List<String> validationErrors = taskService.validateTask(task);
+
+            if (validationErrors.isEmpty()) {
+                response.put("success", true);
+                response.put("message", "Task validation passed");
+                response.put("valid", true);
+            } else {
+                response.put("success", true);
+                response.put("message", "Task validation failed");
+                response.put("valid", false);
+                response.put("errors", validationErrors);
+            }
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Failed to validate task: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    /**
+     * Sync task with Google Calendar manually
+     */
+    @PostMapping("/{taskId}/calendar/sync")
+    public ResponseEntity<Map<String, Object>> syncTaskWithCalendar(@PathVariable String taskId) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            String userId = SecurityUtils.getCurrentUserId();
+            Optional<Task> result = taskService.syncTaskWithCalendar(taskId, userId);
+
+            if (result.isPresent()) {
+                response.put("success", true);
+                response.put("message", "Task synced with calendar successfully");
+                response.put("data", new TaskResponse(result.get()));
+                return ResponseEntity.ok(response);
+            } else {
+                response.put("success", false);
+                response.put("message", "Task not found");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+            }
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Failed to sync with calendar: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    /**
+     * Bulk sync all user's tasks with calendar
+     */
+    @PostMapping("/calendar/sync-all")
+    public ResponseEntity<Map<String, Object>> syncAllTasksWithCalendar() {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            String userId = SecurityUtils.getCurrentUserId();
+            Map<String, Object> syncResult = taskService.syncAllTasksWithCalendar(userId);
+
+            response.put("success", true);
+            response.put("message", "Bulk calendar sync completed");
+            response.putAll(syncResult);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Failed to sync tasks with calendar: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    /**
+     * Get calendar event details for task
+     */
+    @GetMapping("/{taskId}/calendar/event")
+    public ResponseEntity<Map<String, Object>> getTaskCalendarEvent(@PathVariable String taskId) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            String userId = SecurityUtils.getCurrentUserId();
+            Map<String, Object> calendarEvent = taskService.getTaskCalendarEvent(taskId, userId);
+
+            if (calendarEvent != null) {
+                response.put("success", true);
+                response.put("data", calendarEvent);
+                return ResponseEntity.ok(response);
+            } else {
+                response.put("success", false);
+                response.put("message", "No calendar event found for this task");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+            }
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Failed to get calendar event: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    /**
+     * Update Google Calendar event ID for task
+     */
+    @PutMapping("/{taskId}/calendar/event-id")
+    public ResponseEntity<Map<String, Object>> updateCalendarEventId(
+            @PathVariable String taskId,
+            @RequestBody Map<String, String> requestBody) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            String userId = SecurityUtils.getCurrentUserId();
+            String eventId = requestBody.get("eventId");
+
+            Optional<Task> result = taskService.updateGoogleCalendarEventId(taskId, userId, eventId);
+
+            if (result.isPresent()) {
+                response.put("success", true);
+                response.put("message", "Calendar event ID updated successfully");
+                response.put("data", new TaskResponse(result.get()));
+                return ResponseEntity.ok(response);
+            } else {
+                response.put("success", false);
+                response.put("message", "Task not found");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+            }
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Failed to update calendar event ID: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }

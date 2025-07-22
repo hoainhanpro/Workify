@@ -318,6 +318,205 @@ const taskService = {
       throw error;
     }
   },
+
+  // ================ SUBTASK MANAGEMENT ================
+  
+  // Create subtask
+  createSubTask: async (taskId, subTaskData) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/tasks/${taskId}/subtasks`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': getAuthToken(),
+        },
+        body: JSON.stringify(subTaskData),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error creating subtask:', error);
+      throw error;
+    }
+  },
+
+  // Update subtask
+  updateSubTask: async (taskId, subTaskId, subTaskData) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/tasks/${taskId}/subtasks/${subTaskId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': getAuthToken(),
+        },
+        body: JSON.stringify(subTaskData),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error updating subtask:', error);
+      throw error;
+    }
+  },
+
+  // Delete subtask
+  deleteSubTask: async (taskId, subTaskId) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/tasks/${taskId}/subtasks/${subTaskId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': getAuthToken(),
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error deleting subtask:', error);
+      throw error;
+    }
+  },
+
+  // ================ CALENDAR INTEGRATION ================
+  
+  // Update calendar sync setting
+  updateCalendarSync: async (taskId, enabled) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/tasks/${taskId}/calendar/sync`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': getAuthToken(),
+        },
+        body: JSON.stringify({ enabled }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error updating calendar sync:', error);
+      throw error;
+    }
+  },
+
+  // Sync task with calendar manually
+  syncTaskWithCalendar: async (taskId) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/tasks/${taskId}/calendar/sync`, {
+        method: 'POST',
+        headers: {
+          'Authorization': getAuthToken(),
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error syncing task with calendar:', error);
+      throw error;
+    }
+  },
+
+  // Bulk sync all tasks with calendar
+  syncAllTasksWithCalendar: async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/tasks/calendar/sync-all`, {
+        method: 'POST',
+        headers: {
+          'Authorization': getAuthToken(),
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error syncing all tasks with calendar:', error);
+      throw error;
+    }
+  },
+
+  // Get calendar event for task
+  getTaskCalendarEvent: async (taskId) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/tasks/${taskId}/calendar/event`, {
+        method: 'GET',
+        headers: {
+          'Authorization': getAuthToken(),
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error getting calendar event:', error);
+      throw error;
+    }
+  },
+
+  // Get tasks due today
+  getTasksDueToday: async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/tasks/due-today`, {
+        method: 'GET',
+        headers: {
+          'Authorization': getAuthToken(),
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error getting tasks due today:', error);
+      throw error;
+    }
+  },
+
+  // Get overdue tasks
+  getOverdueTasks: async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/tasks/overdue`, {
+        method: 'GET',
+        headers: {
+          'Authorization': getAuthToken(),
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error getting overdue tasks:', error);
+      throw error;
+    }
+  },
 };
 
 export default taskService;

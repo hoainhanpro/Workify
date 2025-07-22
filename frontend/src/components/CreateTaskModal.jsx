@@ -1,17 +1,21 @@
 import React, { useState, useEffect } from 'react'
 import TagSelector from './TagSelector' // Import TagSelector component
 
-const CreateTaskModal = ({ show, onHide, onTaskCreated, availableTags }) => {
-  const [formData, setFormData] = useState({
+const CreateTaskModal = ({ show, onHide, onTaskCreated, availableTags }) => {  const [formData, setFormData] = useState({
     title: '',
     description: '',
     priority: 'MEDIUM',
     status: 'TODO',
     tags: [],
+    dueDate: '',
+    syncWithCalendar: false,
+    subTasks: [],
   });
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [tagInput, setTagInput] = useState('')
+  const [subTaskInput, setSubTaskInput] = useState('')
+  const [showSubTasks, setShowSubTasks] = useState(false)
 
   // Close modal on ESC key
   useEffect(() => {
@@ -51,13 +55,46 @@ const CreateTaskModal = ({ show, onHide, onTaskCreated, availableTags }) => {
     }
   }
 
-  const handleRemoveTag = (tagToRemove) => {
+  const handleRemoveTag = (tagId) => {
     setFormData(prev => ({
       ...prev,
-      tags: prev.tags.filter(tag => tag !== tagToRemove)
+      tags: prev.tags.filter(tag => tag !== tagId)
     }))
   }
 
+  const handleAddSubTask = (e) => {
+    e.preventDefault()
+    if (subTaskInput.trim()) {
+      const newSubTask = {
+        id: Date.now().toString(), // Temporary ID
+        title: subTaskInput.trim(),
+        description: '',
+        status: 'TODO',
+        priority: 'MEDIUM',
+      }
+      setFormData(prev => ({
+        ...prev,
+        subTasks: [...prev.subTasks, newSubTask]
+      }))
+      setSubTaskInput('')
+    }
+  }
+
+  const handleRemoveSubTask = (subTaskId) => {
+    setFormData(prev => ({
+      ...prev,
+      subTasks: prev.subTasks.filter(subTask => subTask.id !== subTaskId)
+    }))
+  }
+
+  const handleSubTaskChange = (subTaskId, field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      subTasks: prev.subTasks.map(subTask =>
+        subTask.id === subTaskId ? { ...subTask, [field]: value } : subTask
+      )
+    }))
+  }
   const handleSubmit = async (e) => {
     e.preventDefault()
     setLoading(true)
@@ -69,18 +106,42 @@ const CreateTaskModal = ({ show, onHide, onTaskCreated, availableTags }) => {
         throw new Error('Tiêu đề là bắt buộc')
       }
 
-      const result = await onTaskCreated(formData)
+      // Process form data before sending
+      const processedData = { ...formData }
       
-      if (result && result.success) {
-        // Reset form
+      // Convert due date to ISO string if provided
+      if (processedData.dueDate) {
+        const date = new Date(processedData.dueDate)
+        processedData.dueDate = date.toISOString()
+      }
+      
+      // Process subtasks due dates
+      if (processedData.subTasks && processedData.subTasks.length > 0) {
+        processedData.subTasks = processedData.subTasks.map(subTask => {
+          if (subTask.dueDate) {
+            const date = new Date(subTask.dueDate)
+            return { ...subTask, dueDate: date.toISOString() }
+          }
+          return subTask
+        })
+      }
+
+      const result = await onTaskCreated(processedData)
+      
+      if (result && result.success) {        // Reset form
         setFormData({
           title: '',
           description: '',
           priority: 'MEDIUM',
           status: 'TODO',
-          tags: []
+          tags: [],
+          dueDate: '',
+          syncWithCalendar: false,
+          subTasks: [],
         })
         setTagInput('')
+        setSubTaskInput('')
+        setShowSubTasks(false)
         onHide()
       }
     } catch (err) {
@@ -90,7 +151,6 @@ const CreateTaskModal = ({ show, onHide, onTaskCreated, availableTags }) => {
       setLoading(false)
     }
   }
-
   const handleClose = () => {
     if (!loading) {
       setFormData({
@@ -98,9 +158,14 @@ const CreateTaskModal = ({ show, onHide, onTaskCreated, availableTags }) => {
         description: '',
         priority: 'MEDIUM',
         status: 'TODO',
-        tags: []
+        tags: [],
+        dueDate: '',
+        syncWithCalendar: false,
+        subTasks: [],
       })
       setTagInput('')
+      setSubTaskInput('')
+      setShowSubTasks(false)
       setError('')
       onHide()
     }
@@ -221,6 +286,51 @@ const CreateTaskModal = ({ show, onHide, onTaskCreated, availableTags }) => {
                 </div>
               </div>
 
+              {/* Due Date and Calendar Sync */}
+              <div className="row">
+                <div className="col-md-8">
+                  <div className="mb-3">
+                    <label className="form-label">Hạn hoàn thành</label>
+                    <input
+                      type="datetime-local"
+                      className="form-control"
+                      name="dueDate"
+                      value={formData.dueDate}
+                      onChange={handleInputChange}
+                      disabled={loading}
+                    />
+                    <div className="form-text">
+                      Chọn ngày và giờ hoàn thành nhiệm vụ
+                    </div>
+                  </div>
+                </div>
+                <div className="col-md-4">
+                  <div className="mb-3">
+                    <label className="form-label">&nbsp;</label>
+                    <div className="form-check">
+                      <input
+                        className="form-check-input"
+                        type="checkbox"
+                        id="syncWithCalendar"
+                        name="syncWithCalendar"
+                        checked={formData.syncWithCalendar}
+                        onChange={(e) => setFormData(prev => ({ ...prev, syncWithCalendar: e.target.checked }))
+                        }
+                        disabled={loading || !formData.dueDate}
+                      />
+                      <label className="form-check-label" htmlFor="syncWithCalendar">
+                        Đồng bộ với Google Calendar
+                      </label>
+                    </div>
+                    {!formData.dueDate && (
+                      <div className="form-text text-muted">
+                        Cần có hạn hoàn thành để đồng bộ
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
               {/* Tags */}
               <div className="mb-3">
                 <label className="form-label">Thẻ tag</label>
@@ -229,6 +339,157 @@ const CreateTaskModal = ({ show, onHide, onTaskCreated, availableTags }) => {
                   onTagsChange={(newTagIds) => setFormData(prev => ({ ...prev, tags: newTagIds }))}
                   availableTags={availableTags}
                 />
+              </div>
+
+              {/* Subtasks */}
+              <div className="mb-3">
+                <label className="form-label">Công việc con</label>
+                <div>
+                  <button
+                    type="button"
+                    className="btn btn-link p-0"
+                    onClick={() => setShowSubTasks(prev => !prev)}
+                    disabled={loading}
+                  >
+                    {showSubTasks ? 'Ẩn công việc con' : 'Thêm công việc con'}
+                  </button>
+                </div>
+
+                {showSubTasks && (
+                  <div className="mt-3">
+                    {formData.subTasks.length === 0 && (
+                      <div className="text-muted">
+                        Chưa có công việc con nào. Nhấn{" "}
+                        <a
+                          href="#"
+                          onClick={() => setShowSubTasks(true)}
+                          className="link-primary"
+                        >
+                          vào đây
+                        </a>{" "}
+                        để thêm công việc con.
+                      </div>
+                    )}
+
+                    {formData.subTasks.map((subTask, index) => (
+                      <div key={subTask.id} className="card mb-2">
+                        <div className="card-body">
+                          <div className="d-flex align-items-center">
+                            <h6 className="card-title mb-0">
+                              Công việc con {index + 1}
+                            </h6>
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-danger ms-auto"
+                              onClick={() => handleRemoveSubTask(subTask.id)}
+                              disabled={loading}
+                              title="Xóa công việc con"
+                            >
+                              <i className="bi bi-trash"></i>
+                            </button>
+                          </div>
+
+                          <div className="row g-2">
+                            <div className="col">
+                              <div className="form-group">
+                                <label className="form-label">
+                                  Tiêu đề công việc con
+                                </label>
+                                <input
+                                  type="text"
+                                  className="form-control"
+                                  value={subTask.title}
+                                  onChange={(e) =>
+                                    handleSubTaskChange(
+                                      subTask.id,
+                                      'title',
+                                      e.target.value
+                                    )
+                                  }
+                                  placeholder="Nhập tiêu đề công việc con..."
+                                  disabled={loading}
+                                />
+                              </div>
+                            </div>
+
+                            <div className="col-auto">
+                              <div className="form-group">
+                                <label className="form-label">
+                                  Trạng thái
+                                </label>
+                                <select
+                                  className="form-select"
+                                  value={subTask.status}
+                                  onChange={(e) =>
+                                    handleSubTaskChange(
+                                      subTask.id,
+                                      'status',
+                                      e.target.value
+                                    )
+                                  }
+                                  disabled={loading}
+                                >
+                                  <option value="TODO">Chưa bắt đầu</option>
+                                  <option value="IN_PROGRESS">Đang thực hiện</option>
+                                  <option value="COMPLETED">Hoàn thành</option>
+                                </select>
+                              </div>
+                            </div>
+
+                            <div className="col-auto">
+                              <div className="form-group">
+                                <label className="form-label">
+                                  Độ ưu tiên
+                                </label>
+                                <select
+                                  className="form-select"
+                                  value={subTask.priority}
+                                  onChange={(e) =>
+                                    handleSubTaskChange(
+                                      subTask.id,
+                                      'priority',
+                                      e.target.value
+                                    )
+                                  }
+                                  disabled={loading}
+                                >
+                                  <option value="LOW">Thấp</option>
+                                  <option value="MEDIUM">Trung bình</option>
+                                  <option value="HIGH">Cao</option>
+                                </select>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}                    <div>
+                      <div className="input-group">
+                        <input
+                          type="text"
+                          className="form-control"
+                          value={subTaskInput}
+                          onChange={(e) => setSubTaskInput(e.target.value)}
+                          placeholder="Nhập tiêu đề công việc con mới..."
+                          disabled={loading}
+                          onKeyPress={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault()
+                              handleAddSubTask(e)
+                            }
+                          }}
+                        />
+                        <button
+                          type="button"
+                          className="btn btn-primary"
+                          disabled={loading}
+                          onClick={handleAddSubTask}
+                        >
+                          <i className="bi bi-plus-circle"></i>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 

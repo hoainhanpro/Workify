@@ -3,8 +3,111 @@ package com.workify.backend.dto;
 import com.workify.backend.model.Task;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 public class TaskResponse {
+
+    // SubTaskResponse inner class
+    public static class SubTaskResponse {
+        private String id;
+        private String title;
+        private String description;
+        private Task.TaskStatus status;
+        private Task.TaskPriority priority;
+        private LocalDateTime createdAt;
+        private LocalDateTime updatedAt;
+        private LocalDateTime completedAt;
+        private LocalDateTime dueDate;
+
+        // SubTaskResponse Constructors
+        public SubTaskResponse() {
+        }
+
+        public SubTaskResponse(Task.SubTask subTask) {
+            this.id = subTask.getId() != null ? subTask.getId() : UUID.randomUUID().toString();
+            this.title = subTask.getTitle();
+            this.description = subTask.getDescription();
+            this.status = subTask.getStatus();
+            this.priority = subTask.getPriority();
+            this.createdAt = subTask.getCreatedAt();
+            this.updatedAt = subTask.getUpdatedAt();
+            this.completedAt = subTask.getCompletedAt();
+            this.dueDate = subTask.getDueDate();
+        }
+
+        // SubTaskResponse Getters and Setters
+        public String getId() {
+            return id;
+        }
+
+        public void setId(String id) {
+            this.id = id;
+        }
+
+        public String getTitle() {
+            return title;
+        }
+
+        public void setTitle(String title) {
+            this.title = title;
+        }
+
+        public String getDescription() {
+            return description;
+        }
+
+        public void setDescription(String description) {
+            this.description = description;
+        }
+
+        public Task.TaskStatus getStatus() {
+            return status;
+        }
+
+        public void setStatus(Task.TaskStatus status) {
+            this.status = status;
+        }
+
+        public Task.TaskPriority getPriority() {
+            return priority;
+        }
+
+        public void setPriority(Task.TaskPriority priority) {
+            this.priority = priority;
+        }
+
+        public LocalDateTime getCreatedAt() {
+            return createdAt;
+        }
+
+        public void setCreatedAt(LocalDateTime createdAt) {
+            this.createdAt = createdAt;
+        }
+
+        public LocalDateTime getUpdatedAt() {
+            return updatedAt;
+        }
+
+        public void setUpdatedAt(LocalDateTime updatedAt) {
+            this.updatedAt = updatedAt;
+        }
+
+        public LocalDateTime getCompletedAt() {
+            return completedAt;
+        }
+
+        public void setCompletedAt(LocalDateTime completedAt) {
+            this.completedAt = completedAt;
+        }
+
+        public LocalDateTime getDueDate() {
+            return dueDate;
+        }
+
+        public void setDueDate(LocalDateTime dueDate) {
+            this.dueDate = dueDate;
+        }
+    }
 
     private String id;
     private String title;
@@ -13,12 +116,17 @@ public class TaskResponse {
     private Task.TaskPriority priority;
     private String userId;
     private List<String> tags;
+    private List<SubTaskResponse> subTasks;
+    private LocalDateTime dueDate;
+    private String googleCalendarEventId;
+    private Boolean syncWithCalendar;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private LocalDateTime completedAt;
 
     // Constructors
-    public TaskResponse() {}
+    public TaskResponse() {
+    }
 
     public TaskResponse(Task task) {
         this.id = task.getId();
@@ -31,6 +139,18 @@ public class TaskResponse {
         this.createdAt = task.getCreatedAt();
         this.updatedAt = task.getUpdatedAt();
         this.completedAt = task.getCompletedAt();
+
+        // Convert SubTasks
+        if (task.getSubTasks() != null) {
+            this.subTasks = task.getSubTasks().stream()
+                    .map(SubTaskResponse::new)
+                    .collect(java.util.stream.Collectors.toList());
+        }
+
+        // Calendar integration fields
+        this.dueDate = task.getDueDate();
+        this.googleCalendarEventId = task.getGoogleCalendarEventId();
+        this.syncWithCalendar = task.getSyncWithCalendar();
     }
 
     // Getters and Setters
@@ -112,5 +232,39 @@ public class TaskResponse {
 
     public void setCompletedAt(LocalDateTime completedAt) {
         this.completedAt = completedAt;
+    }
+
+    // SubTasks getters and setters
+    public List<SubTaskResponse> getSubTasks() {
+        return subTasks;
+    }
+
+    public void setSubTasks(List<SubTaskResponse> subTasks) {
+        this.subTasks = subTasks;
+    }
+
+    // Calendar integration getters and setters
+    public LocalDateTime getDueDate() {
+        return dueDate;
+    }
+
+    public void setDueDate(LocalDateTime dueDate) {
+        this.dueDate = dueDate;
+    }
+
+    public String getGoogleCalendarEventId() {
+        return googleCalendarEventId;
+    }
+
+    public void setGoogleCalendarEventId(String googleCalendarEventId) {
+        this.googleCalendarEventId = googleCalendarEventId;
+    }
+
+    public Boolean getSyncWithCalendar() {
+        return syncWithCalendar;
+    }
+
+    public void setSyncWithCalendar(Boolean syncWithCalendar) {
+        this.syncWithCalendar = syncWithCalendar;
     }
 }
