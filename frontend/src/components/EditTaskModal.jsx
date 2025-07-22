@@ -1,58 +1,37 @@
 import React, { useState, useEffect } from 'react'
-import TagSelector from './TagSelector'
 
-const EditTaskModal = ({ show, onHide, task, onTaskUpdated, availableTags }) => {  const [formData, setFormData] = useState({
+const EditTaskModal = ({ show, onHide, task, onTaskUpdated }) => {
+  const [formData, setFormData] = useState({
     title: '',
     description: '',
     priority: 'MEDIUM',
     status: 'TODO',
-    tags: [],
     dueDate: '',
     syncWithCalendar: false,
     subTasks: [],
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [tagInput, setTagInput] = useState('')
   const [subTaskInput, setSubTaskInput] = useState('')
-  const [showSubTasks, setShowSubTasks] = useState(false)  // Initialize form data when task changes
+  const [showSubTasks, setShowSubTasks] = useState(false)
+  // Initialize form data when task changes
   useEffect(() => {
     if (task) {
       const formattedDueDate = task.dueDate ? 
         new Date(task.dueDate).toISOString().slice(0, 16) : '';
-      
-      // Convert tag names to tag IDs for TagSelector if needed
-      let tagIds = task.tags || [];
-      if (availableTags.length > 0 && task.tags && task.tags.length > 0) {
-        // Check if tags are names (string) or IDs by trying to find matches
-        const isTagNames = task.tags.some(tag => 
-          availableTags.some(availableTag => availableTag.name === tag)
-        );
-        
-        if (isTagNames) {
-          // Convert tag names to tag IDs
-          tagIds = task.tags
-            .map(tagName => {
-              const found = availableTags.find(t => t.name === tagName);
-              return found ? found.id : null;
-            })
-            .filter(id => id !== null);
-        }
-      }
       
       setFormData({
         title: task.title || '',
         description: task.description || '',
         priority: task.priority || 'MEDIUM',
         status: task.status || 'TODO',
-        tags: tagIds,
         dueDate: formattedDueDate,
         syncWithCalendar: task.syncWithCalendar || false,
         subTasks: task.subTasks || [],
       })
       setShowSubTasks(task.subTasks && task.subTasks.length > 0)
     }
-  }, [task, availableTags])
+  }, [task])
 
   // Close modal on ESC key
   useEffect(() => {
@@ -74,28 +53,11 @@ const EditTaskModal = ({ show, onHide, task, onTaskUpdated, availableTags }) => 
       document.body.style.overflow = 'unset'
     }
   }, [show, loading])
-
   const handleInputChange = (e) => {
     const { name, value } = e.target
     setFormData(prev => ({
       ...prev,
       [name]: value
-    }))
-  }
-
-  const handleAddTag = (tagId) => {
-    if (!formData.tags.includes(tagId)) {
-      setFormData(prev => ({
-        ...prev,
-        tags: [...prev.tags, tagId]
-      }))
-    }
-  }
-
-  const handleRemoveTag = (tagId) => {
-    setFormData(prev => ({
-      ...prev,
-      tags: prev.tags.filter(tag => tag !== tagId)
     }))
   }
 
@@ -124,14 +86,14 @@ const EditTaskModal = ({ show, onHide, task, onTaskUpdated, availableTags }) => 
     }))
   }
 
-  const handleSubTaskChange = (subTaskId, field, value) => {
-    setFormData(prev => ({
+  const handleSubTaskChange = (subTaskId, field, value) => {    setFormData(prev => ({
       ...prev,
       subTasks: prev.subTasks.map(subTask =>
         subTask.id === subTaskId ? { ...subTask, [field]: value } : subTask
       )
     }))
   }
+  
   const handleSubmit = async (e) => {
     e.preventDefault()
     setLoading(true)
@@ -141,17 +103,10 @@ const EditTaskModal = ({ show, onHide, task, onTaskUpdated, availableTags }) => 
       // Validate required fields
       if (!formData.title.trim()) {
         throw new Error('Tiêu đề là bắt buộc')
-      }      // Process form data before sending
-      const processedData = { ...formData }
-      
-      // Convert tag IDs back to tag names for backend
-      if (processedData.tags && processedData.tags.length > 0 && availableTags.length > 0) {
-        processedData.tags = processedData.tags
-          .map(tagId => {
-            const found = availableTags.find(t => t.id === tagId);
-            return found ? found.name : tagId; // Fallback to original if not found
-          });
       }
+
+      // Process form data before sending
+      const processedData = { ...formData }
       
       // Convert due date to ISO string if provided
       if (processedData.dueDate) {
@@ -347,64 +302,7 @@ const EditTaskModal = ({ show, onHide, task, onTaskUpdated, availableTags }) => 
                       </div>
                     )}
                   </div>
-                </div>
-              </div>
-
-              {/* Tags */}
-              <div className="mb-3">
-                <label className="form-label">Thẻ tag</label>
-                <div className="d-flex gap-2 mb-2">
-                  <input
-                    type="text"
-                    className="form-control"
-                    value={tagInput}
-                    onChange={(e) => setTagInput(e.target.value)}
-                    placeholder="Nhập tag và nhấn Enter..."
-                    disabled={loading}
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter') {
-                        handleAddTag(e)
-                      }
-                    }}
-                  />
-                  <button 
-                    type="button"
-                    className="btn btn-outline-primary" 
-                    onClick={handleAddTag}
-                    disabled={loading || !tagInput.trim()}
-                  >
-                    <i className="bi bi-plus"></i>
-                  </button>
-                </div>
-                
-                {formData.tags.length > 0 && (
-                  <div className="d-flex flex-wrap gap-1">
-                    {formData.tags.map((tag, index) => (
-                      <span key={index} className="badge bg-secondary d-flex align-items-center gap-1">
-                        {tag}
-                        <button
-                          type="button"
-                          className="btn-close btn-close-white"
-                          style={{ fontSize: '0.5em' }}
-                          onClick={() => handleRemoveTag(tag)}
-                          disabled={loading}
-                        ></button>
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Tag Selector - New Component */}
-              <div className="mb-3">
-                <label className="form-label">Chọn thẻ tag</label>
-                <TagSelector
-                  selectedTagIds={formData.tags}
-                  onTagsChange={(newTagIds) => setFormData(prev => ({ ...prev, tags: newTagIds }))}
-                  availableTags={availableTags}
-                  disabled={loading}
-                />
-              </div>
+                </div>              </div>
 
               {/* Subtasks */}
               <div className="mb-3">

@@ -398,9 +398,7 @@ const Tasks = () => {
         onHide={() => setShowCreateModal(false)}
         onTaskCreated={handleCreateTask}
         availableTags={availableTags}
-      />
-
-      {/* Edit Task Modal */}
+      />      {/* Edit Task Modal */}
       <EditTaskModal
         show={showEditModal}
         onHide={() => {
@@ -409,7 +407,6 @@ const Tasks = () => {
         }}
         task={selectedTask}
         onTaskUpdated={handleUpdateTask}
-        availableTags={availableTags}
       />
 
       {/* Confirm Delete Modal */}

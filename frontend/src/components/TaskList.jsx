@@ -1,8 +1,22 @@
-import React from 'react'
+import React, { useState } from 'react'
 import SubTaskList from './SubTaskList'
 import taskService from '../services/taskService'
+import './TaskList.css'
 
 const TaskList = ({ tasks, loading, error, showActions = false, onTaskUpdate = null, onTaskEdit = null, onTaskDelete = null, onRefresh = null, onCreateTask = null, availableTags = [] }) => {
+  // State to track which tasks have expanded subtasks
+  const [expandedTasks, setExpandedTasks] = useState(new Set())
+
+  // Toggle expand/collapse for a specific task
+  const toggleSubTasks = (taskId) => {
+    const newExpanded = new Set(expandedTasks)
+    if (newExpanded.has(taskId)) {
+      newExpanded.delete(taskId)
+    } else {
+      newExpanded.add(taskId)
+    }
+    setExpandedTasks(newExpanded)
+  }
   const formatDate = (dateString) => {
     const date = new Date(dateString)
     return date.toLocaleDateString('vi-VN', {
@@ -189,10 +203,45 @@ const TaskList = ({ tasks, loading, error, showActions = false, onTaskUpdate = n
       </div>
     )
   }
-
   return (
-    <div className="list-group list-group-flush">
-      {tasks.map((task) => (
+    <div>      {/* Global expand/collapse controls */}
+      {tasks.some(task => task.subTasks && task.subTasks.length > 0) && (
+        <div className="d-flex justify-content-between align-items-center px-3 py-2 task-expand-controls">
+          <small className="text-primary fw-semibold">
+            <i className="bi bi-list-task me-1"></i>
+            Điều khiển công việc con
+          </small>
+          <div className="d-flex gap-1">
+            <button
+              type="button"
+              className="btn btn-sm btn-primary"
+              onClick={() => {
+                const tasksWithSubTasks = tasks
+                  .filter(task => task.subTasks && task.subTasks.length > 0)
+                  .map(task => task.id)
+                setExpandedTasks(new Set(tasksWithSubTasks))
+              }}
+              style={{ fontSize: '0.75rem' }}
+            >
+              <i className="bi bi-chevron-double-down me-1"></i>
+              <span className="d-none d-md-inline">Mở rộng tất cả</span>
+              <span className="d-md-none">Mở tất cả</span>
+            </button>
+            <button
+              type="button"
+              className="btn btn-sm btn-outline-primary"
+              onClick={() => setExpandedTasks(new Set())}
+              style={{ fontSize: '0.75rem' }}
+            >
+              <i className="bi bi-chevron-double-up me-1"></i>
+              <span className="d-none d-md-inline">Thu gọn tất cả</span>
+              <span className="d-md-none">Thu tất cả</span>
+            </button>
+          </div>
+        </div>
+      )}
+      
+      <div className="list-group list-group-flush">{tasks.map((task) => (
         <div key={task.id} className="list-group-item border-0 py-3 px-3">
           <div className="d-flex align-items-start">
             {/* Checkbox */}
@@ -213,13 +262,68 @@ const TaskList = ({ tasks, loading, error, showActions = false, onTaskUpdate = n
             
             {/* Main Content */}
             <div className="flex-grow-1 min-w-0">
-              <div className="d-flex flex-column flex-lg-row justify-content-between align-items-start gap-3">
-                {/* Left Content */}
-                <div className="flex-grow-1 min-w-0">
-                  <div className="mb-2">
-                    <h6 className={`mb-1 fw-semibold ${task.status === 'COMPLETED' ? 'text-decoration-line-through text-muted' : ''}`}>
-                      {task.title}
-                    </h6>
+              <div className="d-flex flex-column flex-lg-row justify-content-between align-items-start gap-3">                {/* Left Content */}
+                <div className="flex-grow-1 min-w-0">                  <div className="mb-2">
+                    <div className="d-flex align-items-center gap-2 mb-1">
+                      <h6 className={`mb-0 fw-semibold ${task.status === 'COMPLETED' ? 'text-decoration-line-through text-muted' : ''}`}>
+                        {task.title}
+                      </h6>
+                        {/* Subtask info and controls */}
+                      {task.subTasks && task.subTasks.length > 0 && (
+                        <div className="d-flex align-items-center gap-1">
+                          {/* Subtask count badge */}
+                          <span className="badge bg-light text-dark border" style={{ fontSize: '0.65rem' }}>
+                            <i className="bi bi-list-task me-1"></i>
+                            {task.subTasks.filter(st => st.status === 'COMPLETED').length}/{task.subTasks.length}
+                          </span>
+                            {/* Individual task toggle button */}
+                          <button
+                            type="button"
+                            className={`btn btn-sm ${expandedTasks.has(task.id) ? 'task-expanded-indicator' : 'btn-outline-primary'} border d-flex align-items-center subtask-toggle-btn`}
+                            onClick={() => toggleSubTasks(task.id)}
+                            title={expandedTasks.has(task.id) ? 'Thu gọn công việc con' : 'Mở rộng công việc con'}
+                            style={{ minWidth: 'auto', minHeight: '24px', fontSize: '0.7rem', padding: '2px 6px' }}
+                          >
+                            <i className={`bi ${expandedTasks.has(task.id) ? 'bi-chevron-up' : 'bi-chevron-down'} me-1`}></i>
+                            <span className="d-none d-sm-inline">
+                              {expandedTasks.has(task.id) ? 'Thu gọn' : 'Mở rộng'}
+                            </span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                      {/* Subtask progress bar (only show when has subtasks) */}
+                    {task.subTasks && task.subTasks.length > 0 && (
+                      <div className="mb-2">
+                        <div className="progress subtask-progress" style={{ height: '6px' }}>
+                          <div 
+                            className={`progress-bar subtask-progress-bar ${
+                              task.subTasks.filter(st => st.status === 'COMPLETED').length === task.subTasks.length 
+                                ? 'bg-success' 
+                                : task.subTasks.filter(st => st.status === 'COMPLETED').length > 0 
+                                  ? 'bg-warning' 
+                                  : 'bg-secondary'
+                            }`}
+                            style={{ 
+                              width: `${(task.subTasks.filter(st => st.status === 'COMPLETED').length / task.subTasks.length) * 100}%` 
+                            }}
+                          ></div>
+                        </div>
+                        <small className="text-muted d-flex justify-content-between align-items-center" style={{ fontSize: '0.7rem' }}>
+                          <span>
+                            <i className="bi bi-graph-up me-1"></i>
+                            Tiến độ: {Math.round((task.subTasks.filter(st => st.status === 'COMPLETED').length / task.subTasks.length) * 100)}%
+                          </span>
+                          {expandedTasks.has(task.id) && (
+                            <span className="text-primary">
+                              <i className="bi bi-eye me-1"></i>
+                              Đang hiển thị
+                            </span>
+                          )}
+                        </small>
+                      </div>
+                    )}
+                    
                     {task.description && (
                       <p className="mb-2 text-muted small lh-sm">{task.description}</p>
                     )}
@@ -310,8 +414,7 @@ const TaskList = ({ tasks, loading, error, showActions = false, onTaskUpdate = n
                         style={{ minWidth: '32px', minHeight: '32px' }}
                       >
                         <i className="bi bi-three-dots-vertical"></i>
-                      </button>
-                      <ul className="dropdown-menu dropdown-menu-end shadow-sm">
+                      </button>                      <ul className="dropdown-menu dropdown-menu-end shadow-sm">
                         <li>
                           <button 
                             className="dropdown-item py-2" 
@@ -322,6 +425,21 @@ const TaskList = ({ tasks, loading, error, showActions = false, onTaskUpdate = n
                             Chỉnh sửa
                           </button>
                         </li>
+                        
+                        {/* Subtask toggle option in dropdown */}
+                        {task.subTasks && task.subTasks.length > 0 && (
+                          <li>
+                            <button 
+                              className="dropdown-item py-2" 
+                              type="button"
+                              onClick={() => toggleSubTasks(task.id)}
+                            >
+                              <i className={`bi ${expandedTasks.has(task.id) ? 'bi-chevron-up' : 'bi-chevron-down'} me-2`}></i>
+                              {expandedTasks.has(task.id) ? 'Thu gọn công việc con' : 'Mở rộng công việc con'}
+                            </button>
+                          </li>
+                        )}
+                        
                         <li>
                           <button className="dropdown-item py-2" type="button">
                             <i className="bi bi-eye me-2"></i>
@@ -389,20 +507,21 @@ const TaskList = ({ tasks, loading, error, showActions = false, onTaskUpdate = n
                 </div>
               )}
             </div>
-          )}
-
-          {/* SubTasks */}
-          {task.subTasks && task.subTasks.length > 0 && (            <SubTaskList
-              subTasks={task.subTasks}
-              taskId={task.id}
-              onSubTaskUpdate={handleSubTaskUpdate}
-              onSubTaskDelete={handleSubTaskDelete}
-              onTaskStatusUpdate={(newStatus) => handleTaskStatusUpdate(task.id, newStatus)}
-              readOnly={!showActions}
-            />
+          )}          {/* SubTasks */}
+          {task.subTasks && task.subTasks.length > 0 && expandedTasks.has(task.id) && (
+            <div className="mt-3 ps-4 border-start border-2 border-light">
+              <SubTaskList
+                subTasks={task.subTasks}
+                taskId={task.id}
+                onSubTaskUpdate={handleSubTaskUpdate}
+                onSubTaskDelete={handleSubTaskDelete}
+                onTaskStatusUpdate={(newStatus) => handleTaskStatusUpdate(task.id, newStatus)}
+                readOnly={!showActions}
+              />            </div>
           )}
         </div>
       ))}
+      </div>
     </div>
   )
 }
