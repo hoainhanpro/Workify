@@ -49,6 +49,18 @@
   font-size: 0.7rem;
 }
 
+.subtask-status-select {
+  min-width: 110px;
+  font-size: 0.8rem;
+  padding: 2px 6px;
+  height: auto;
+  border-radius: 4px;
+}
+
+.subtask-status-select:focus {
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
 .subtask-actions .btn {
   color: #6c757d;
   font-size: 0.8rem;

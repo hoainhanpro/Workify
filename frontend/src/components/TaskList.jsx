@@ -123,6 +123,18 @@ const TaskList = ({ tasks, loading, error, showActions = false, onTaskUpdate = n
     }
   };
 
+  const handleTaskStatusUpdate = async (taskId, newStatus) => {
+    try {
+      await taskService.updateTask(taskId, { status: newStatus });
+      if (onRefresh) {
+        onRefresh();
+      }
+    } catch (error) {
+      console.error('Error updating task status:', error);
+      throw error;
+    }
+  };
+
   const isOverdue = (dueDate) => {
     if (!dueDate) return false;
     return new Date(dueDate) < new Date();
@@ -346,12 +358,12 @@ const TaskList = ({ tasks, loading, error, showActions = false, onTaskUpdate = n
           )}
 
           {/* SubTasks */}
-          {task.subTasks && task.subTasks.length > 0 && (
-            <SubTaskList
+          {task.subTasks && task.subTasks.length > 0 && (            <SubTaskList
               subTasks={task.subTasks}
               taskId={task.id}
               onSubTaskUpdate={handleSubTaskUpdate}
               onSubTaskDelete={handleSubTaskDelete}
+              onTaskStatusUpdate={(newStatus) => handleTaskStatusUpdate(task.id, newStatus)}
               readOnly={!showActions}
             />
           )}

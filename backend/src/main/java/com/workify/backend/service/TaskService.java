@@ -327,9 +327,8 @@ public class TaskService {
             return Optional.of(taskRepository.save(task));
         }
         return Optional.empty();
-    }
+    } // Update SubTask
 
-    // Update SubTask
     public Optional<Task> updateSubTask(String taskId, String userId, String subTaskId, Task.SubTask updatedSubTask) {
         Optional<Task> taskOpt = taskRepository.findByIdAndUserId(taskId, userId);
         if (taskOpt.isPresent()) {
@@ -354,15 +353,18 @@ public class TaskService {
                         }
 
                         task.getSubTasks().set(i, updatedSubTask);
+
+                        // Auto-update main task status based on subtasks
+                        updateMainTaskStatusBasedOnSubTasks(task);
+
                         return Optional.of(taskRepository.save(task));
                     }
                 }
             }
         }
         return Optional.empty();
-    }
+    } // Delete SubTask
 
-    // Delete SubTask
     public Optional<Task> deleteSubTask(String taskId, String userId, String subTaskId) {
         Optional<Task> taskOpt = taskRepository.findByIdAndUserId(taskId, userId);
         if (taskOpt.isPresent()) {
@@ -370,6 +372,8 @@ public class TaskService {
             if (task.getSubTasks() != null) {
                 boolean removed = task.getSubTasks().removeIf(subTask -> subTask.getId().equals(subTaskId));
                 if (removed) {
+                    // Auto-update main task status based on remaining subtasks
+                    updateMainTaskStatusBasedOnSubTasks(task);
                     return Optional.of(taskRepository.save(task));
                 }
             }
@@ -634,5 +638,44 @@ public class TaskService {
         }
 
         return errors;
+    }
+
+    /**
+     * Update main task status based on subtasks status
+     * Logic:
+     * - If all subtasks are completed -> main task becomes COMPLETED
+     * - If any subtask is IN_PROGRESS or COMPLETED -> main task becomes IN_PROGRESS
+     * - If all subtasks are TODO -> main task becomes TODO
+     */
+    private void updateMainTaskStatusBasedOnSubTasks(Task task) {
+        if (task.getSubTasks() == null || task.getSubTasks().isEmpty()) {
+            return; // No subtasks, don't change main task status
+        }
+
+        long totalSubTasks = task.getSubTasks().size();
+        long completedSubTasks = task.getSubTasks().stream()
+                .filter(st -> st.getStatus() == Task.TaskStatus.COMPLETED)
+                .count();
+        long inProgressSubTasks = task.getSubTasks().stream()
+                .filter(st -> st.getStatus() == Task.TaskStatus.IN_PROGRESS)
+                .count();
+
+        // If all subtasks are completed
+        if (completedSubTasks == totalSubTasks) {
+            task.setStatus(Task.TaskStatus.COMPLETED);
+            if (task.getCompletedAt() == null) {
+                task.setCompletedAt(LocalDateTime.now());
+            }
+        }
+        // If any subtask is in progress or completed
+        else if (completedSubTasks > 0 || inProgressSubTasks > 0) {
+            task.setStatus(Task.TaskStatus.IN_PROGRESS);
+            task.setCompletedAt(null); // Clear completion timestamp
+        }
+        // If all subtasks are TODO
+        else {
+            task.setStatus(Task.TaskStatus.TODO);
+            task.setCompletedAt(null); // Clear completion timestamp
+        }
     }
 }

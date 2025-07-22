@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import './SubTaskList.css';
 
-const SubTaskList = ({ subTasks = [], taskId, onSubTaskUpdate, onSubTaskDelete, readOnly = false }) => {
+const SubTaskList = ({ subTasks = [], taskId, onSubTaskUpdate, onSubTaskDelete, onTaskStatusUpdate, readOnly = false }) => {
   const [expandedSubTasks, setExpandedSubTasks] = useState(new Set());
 
   const toggleSubTaskExpansion = (subTaskId) => {
@@ -14,11 +14,42 @@ const SubTaskList = ({ subTasks = [], taskId, onSubTaskUpdate, onSubTaskDelete, 
     setExpandedSubTasks(newExpanded);
   };
 
+  const updateMainTaskStatus = (updatedSubTasks) => {
+    if (!onTaskStatusUpdate) return;
+
+    const completedSubTasks = updatedSubTasks.filter(st => st.status === 'COMPLETED');
+    const inProgressSubTasks = updatedSubTasks.filter(st => st.status === 'IN_PROGRESS');
+    
+    let newMainTaskStatus;
+    
+    // Nếu tất cả subtask hoàn thành
+    if (completedSubTasks.length === updatedSubTasks.length && updatedSubTasks.length > 0) {
+      newMainTaskStatus = 'COMPLETED';
+    }
+    // Nếu có ít nhất 1 subtask không phải TODO
+    else if (completedSubTasks.length > 0 || inProgressSubTasks.length > 0) {
+      newMainTaskStatus = 'IN_PROGRESS';
+    }
+    // Nếu tất cả subtask đều TODO
+    else {
+      newMainTaskStatus = 'TODO';
+    }
+    
+    onTaskStatusUpdate(newMainTaskStatus);
+  };
+
   const handleStatusChange = async (subTask, newStatus) => {
     if (readOnly || !onSubTaskUpdate) return;
     
     try {
-      await onSubTaskUpdate(taskId, subTask.id, { ...subTask, status: newStatus });
+      const updatedSubTask = { ...subTask, status: newStatus };
+      await onSubTaskUpdate(taskId, subTask.id, updatedSubTask);
+      
+      // Cập nhật trạng thái task chính
+      const updatedSubTasks = subTasks.map(st => 
+        st.id === subTask.id ? updatedSubTask : st
+      );
+      updateMainTaskStatus(updatedSubTasks);
     } catch (error) {
       console.error('Error updating subtask status:', error);
     }
@@ -127,8 +158,7 @@ const SubTaskList = ({ subTasks = [], taskId, onSubTaskUpdate, onSubTaskDelete, 
           const isOverdue = subTask.dueDate && new Date(subTask.dueDate) < new Date() && subTask.status !== 'COMPLETED';
           
           return (
-            <div key={subTask.id} className={`subtask-item ${subTask.status === 'COMPLETED' ? 'completed' : ''}`}>
-              <div className="subtask-header">
+            <div key={subTask.id} className={`subtask-item ${subTask.status === 'COMPLETED' ? 'completed' : ''}`}>              <div className="subtask-header">
                 <div className="d-flex align-items-center">
                   <input
                     type="checkbox"
@@ -142,7 +172,18 @@ const SubTaskList = ({ subTasks = [], taskId, onSubTaskUpdate, onSubTaskDelete, 
                     {subTask.title}
                   </span>
                   
-                  <div className="subtask-badges">
+                  <div className="subtask-badges">                    {!readOnly && (
+                      <select
+                        className="form-select form-select-sm subtask-status-select me-2"
+                        value={subTask.status}
+                        onChange={(e) => handleStatusChange(subTask, e.target.value)}
+                      >
+                        <option value="TODO">Chưa bắt đầu</option>
+                        <option value="IN_PROGRESS">Đang thực hiện</option>
+                        <option value="COMPLETED">Hoàn thành</option>
+                      </select>
+                    )}
+                    
                     <span className={getPriorityBadgeClass(subTask.priority)}>
                       {getPriorityText(subTask.priority)}
                     </span>
