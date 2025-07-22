@@ -197,30 +197,30 @@ Giai đoạn 1: Cơ bản & Hoạt động cá nhân
 [✔️] Authentication & Authorization - 
 → Đăng nhập bằng JWT + OAuth2 Google
 
-[❌] Note Management (CRUD) - 
+[✔️] Note Management (CRUD) - 
     ✔️ Tạo / sửa / xóa ghi chú
 	✔️ Rich text editor (In đậm, nghiêng, gạch chân, heading (dùng Tiptap/Quill))
     ✔️ Checklist: Checkbox trong note
     ❌ Table trong nội dung của note 
-    ❌ Tải lên file (local): Upload file, preview, tải xuống
-    ❌ Gắn tag, pin note: Thêm trường tags, isPinned
-    ❌ Tìm kiếm, filter note: Tìm theo keyword, tag
-    ❌ Cho lưu cả ảnh vào dưới dạng base64 
-    ❌ Export note (PDF, HTML): Export nội dung ghi chú
-    ❌ Lưu lịch sử chỉnh sửa: Versioning hoặc undo/redo
+    ✔️ Tải lên file (local): Upload file, preview, tải xuống
+    ✔️ Gắn tag, pin note: Thêm trường tags, isPinned
+    ✔️ Tìm kiếm, filter note: Tìm theo keyword, tag
+    ✔️ Cho lưu cả ảnh vào dưới dạng base64 
+    ✔️ Export note (PDF, HTML): Export nội dung ghi chú
+    ✔️ Lưu lịch sử chỉnh sửa: Versioning hoặc undo/redo
     
 
-[❌] Task Management (CRUD + Subtasks) 
+[✔️] Task Management (CRUD + Subtasks) 
 → Tạo task chính + subtasks, phân loại mức độ ưu tiên
 
 [✔️] Search & Filter
 → Tìm kiếm task theo từ khoá, mức độ, thời gian
 
 ⚙️ Giai đoạn 2: Mở rộng không gian làm việc (Workspace)
-[❌] Workspace Creation 
+[✔️] Workspace Creation 
 → Tạo workspace để làm việc nhóm
 
-[❌] Member Management & Role-Based Access
+[✔️] Member Management & Role-Based Access
 → Mời thành viên, gán quyền (quản lý / thành viên / xem-only)
 
 [❌] Shared Task/Note in Workspace -

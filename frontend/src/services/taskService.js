@@ -169,6 +169,28 @@ const taskService = {
     }
   },
 
+  // Search tasks by tag ID
+  searchTasksByTagId: async (tagId) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/tasks/tag/${tagId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': getAuthToken(),
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error searching tasks by tag ID:', error);
+      throw error;
+    }
+  },
+
   // Get task statistics
   getTaskStatistics: async () => {
     try {
@@ -274,6 +296,28 @@ const taskService = {
       throw error;
     }
   },
+
+  // Get all tags
+  getAllTags: async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/tags`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': getAuthToken(),
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching tags:', error);
+      throw error;
+    }
+  },
 };
 
-export default taskService 
+export default taskService;

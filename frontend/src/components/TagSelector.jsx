@@ -1,80 +1,60 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useMemo } from 'react'
 import tagService from '../services/tagService'
 
 const TagSelector = ({ 
   selectedTagIds = [], 
   onTagsChange, 
-  placeholder = "Chọn tags...",
-  availableTags = [] // Nhận tags từ parent component
+  placeholder = "Chọn tags..."
 }) => {
-  const [tags, setTags] = useState(availableTags)
+  const [tags, setTags] = useState([])
   const [isOpen, setIsOpen] = useState(false)
   const [searchKeyword, setSearchKeyword] = useState('')
-  const [filteredTags, setFiltereredTags] = useState([])
   const [isLoading, setIsLoading] = useState(false)
   const dropdownRef = useRef(null)
 
-  // Update tags when availableTags prop changes
+  // Gọi API lấy tags từ server
   useEffect(() => {
-    setTags(availableTags)
-  }, [availableTags])
-
-  // Only load tags if not provided via props (backward compatibility)
-  useEffect(() => {
-    if (availableTags.length === 0) {
-      loadTags()
+    const fetchTags = async () => {
+      try {
+        setIsLoading(true)
+        const response = await tagService.getAllTags()
+        const data = response?.data?.data || response?.data || []
+        setTags(data)
+      } catch (err) {
+        console.error("Failed to fetch tags", err)
+      } finally {
+        setIsLoading(false)
+      }
     }
+    fetchTags()
   }, [])
 
+  // Đóng dropdown khi click ra ngoài
   useEffect(() => {
-    // Filter tags based on search keyword
-    if (searchKeyword.trim()) {
-      const filtered = tags.filter(tag => 
-        tag.name.toLowerCase().includes(searchKeyword.toLowerCase())
-      )
-      setFiltereredTags(filtered)
-    } else {
-      setFiltereredTags(tags)
-    }
-  }, [tags, searchKeyword])
-
-  useEffect(() => {
-    // Close dropdown when clicking outside
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setIsOpen(false)
       }
     }
-
     document.addEventListener('mousedown', handleClickOutside)
     return () => {
       document.removeEventListener('mousedown', handleClickOutside)
     }
   }, [])
 
-  const loadTags = async () => {
-    try {
-      setIsLoading(true)
-      const response = await tagService.getAllTags()
-      setTags(response.data || response)
-    } catch (error) {
-      console.error('Error loading tags:', error)
-    } finally {
-      setIsLoading(false)
+  const filteredTags = useMemo(() => {
+    if (searchKeyword.trim()) {
+      return tags.filter(tag =>
+        tag.name.toLowerCase().includes(searchKeyword.toLowerCase())
+      )
     }
-  }
+    return tags
+  }, [searchKeyword, tags])
 
   const handleTagToggle = (tagId) => {
-    let newSelectedTagIds
-    
-    if (selectedTagIds.includes(tagId)) {
-      // Remove tag
-      newSelectedTagIds = selectedTagIds.filter(id => id !== tagId)
-    } else {
-      // Add tag
-      newSelectedTagIds = [...selectedTagIds, tagId]
-    }
-    
+    const newSelectedTagIds = selectedTagIds.includes(tagId)
+      ? selectedTagIds.filter(id => id !== tagId)
+      : [...selectedTagIds, tagId]
     onTagsChange(newSelectedTagIds)
   }
 
@@ -98,7 +78,6 @@ const TagSelector = ({
 
   return (
     <div className="tag-selector" ref={dropdownRef}>
-      {/* Selected Tags Display */}
       <div 
         className={`tag-selector-input ${isOpen ? 'open' : ''}`}
         onClick={() => setIsOpen(!isOpen)}
@@ -131,7 +110,6 @@ const TagSelector = ({
         </div>
       </div>
 
-      {/* Dropdown */}
       {isOpen && (
         <div className="tag-dropdown">
           {/* Search */}
@@ -158,7 +136,7 @@ const TagSelector = ({
             </div>
           </div>
 
-          {/* Tags List */}
+          {/* Tag list */}
           <div className="tags-dropdown-list">
             {isLoading ? (
               <div className="loading-item">Đang tải...</div>
@@ -191,7 +169,7 @@ const TagSelector = ({
             )}
           </div>
 
-          {/* Quick Actions */}
+          {/* Footer */}
           <div className="tag-dropdown-footer">
             <div className="selected-count">
               {selectedTagIds.length} tag được chọn

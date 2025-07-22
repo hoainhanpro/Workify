@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 
-const EditTaskModal = ({ show, onHide, task, onTaskUpdated }) => {
+const EditTaskModal = ({ show, onHide, task, onTaskUpdated, availableTags }) => {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -54,14 +54,12 @@ const EditTaskModal = ({ show, onHide, task, onTaskUpdated }) => {
     }))
   }
 
-  const handleAddTag = (e) => {
-    e.preventDefault()
-    if (tagInput.trim() && !formData.tags.includes(tagInput.trim())) {
+  const handleAddTag = (tagId) => {
+    if (!formData.tags.includes(tagId)) {
       setFormData(prev => ({
         ...prev,
-        tags: [...prev.tags, tagInput.trim()]
+        tags: [...prev.tags, tagId]
       }))
-      setTagInput('')
     }
   }
 
@@ -261,6 +259,17 @@ const EditTaskModal = ({ show, onHide, task, onTaskUpdated }) => {
                     ))}
                   </div>
                 )}
+              </div>
+
+              {/* Tag Selector - New Component */}
+              <div className="mb-3">
+                <label className="form-label">Chọn thẻ tag</label>
+                <TagSelector
+                  selectedTagIds={formData.tags}
+                  onTagsChange={(newTagIds) => setFormData(prev => ({ ...prev, tags: newTagIds }))}
+                  availableTags={availableTags}
+                  disabled={loading}
+                />
               </div>
             </div>
 

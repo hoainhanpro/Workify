@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react'
+import TagSelector from './TagSelector' // Import TagSelector component
 
-const CreateTaskModal = ({ show, onHide, onTaskCreated }) => {
+const CreateTaskModal = ({ show, onHide, onTaskCreated, availableTags }) => {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     priority: 'MEDIUM',
     status: 'TODO',
-    tags: []
-  })
+    tags: [],
+  });
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [tagInput, setTagInput] = useState('')
@@ -41,14 +42,12 @@ const CreateTaskModal = ({ show, onHide, onTaskCreated }) => {
     }))
   }
 
-  const handleAddTag = (e) => {
-    e.preventDefault()
-    if (tagInput.trim() && !formData.tags.includes(tagInput.trim())) {
+  const handleAddTag = (tagId) => {
+    if (!formData.tags.includes(tagId)) {
       setFormData(prev => ({
         ...prev,
-        tags: [...prev.tags, tagInput.trim()]
+        tags: [...prev.tags, tagId]
       }))
-      setTagInput('')
     }
   }
 
@@ -225,46 +224,11 @@ const CreateTaskModal = ({ show, onHide, onTaskCreated }) => {
               {/* Tags */}
               <div className="mb-3">
                 <label className="form-label">Thẻ tag</label>
-                <div className="d-flex gap-2 mb-2">
-                  <input
-                    type="text"
-                    className="form-control"
-                    value={tagInput}
-                    onChange={(e) => setTagInput(e.target.value)}
-                    placeholder="Nhập tag và nhấn Enter..."
-                    disabled={loading}
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter') {
-                        handleAddTag(e)
-                      }
-                    }}
-                  />
-                  <button 
-                    type="button"
-                    className="btn btn-outline-primary" 
-                    onClick={handleAddTag}
-                    disabled={loading || !tagInput.trim()}
-                  >
-                    <i className="bi bi-plus"></i>
-                  </button>
-                </div>
-                
-                {formData.tags.length > 0 && (
-                  <div className="d-flex flex-wrap gap-1">
-                    {formData.tags.map((tag, index) => (
-                      <span key={index} className="badge bg-secondary d-flex align-items-center gap-1">
-                        {tag}
-                        <button
-                          type="button"
-                          className="btn-close btn-close-white"
-                          style={{ fontSize: '0.5em' }}
-                          onClick={() => handleRemoveTag(tag)}
-                          disabled={loading}
-                        ></button>
-                      </span>
-                    ))}
-                  </div>
-                )}
+                <TagSelector
+                  selectedTagIds={formData.tags}
+                  onTagsChange={(newTagIds) => setFormData(prev => ({ ...prev, tags: newTagIds }))}
+                  availableTags={availableTags}
+                />
               </div>
             </div>
 

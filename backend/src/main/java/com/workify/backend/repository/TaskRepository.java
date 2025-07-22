@@ -32,15 +32,20 @@ public interface TaskRepository extends MongoRepository<Task, String> {
 
     // Advanced search for title, description, tags, and priority
     @Query("{ 'userId': ?0, $or: [ " +
-           "{ 'title': { $regex: ?1, $options: 'i' } }, " +
-           "{ 'description': { $regex: ?1, $options: 'i' } }, " +
-           "{ 'tags': { $in: ?2 } }, " +
-           "{ 'priority': ?3 } ] }")
-    List<Task> findByUserIdAndAdvancedSearch(String userId, String searchTerm, List<String> tags, Task.TaskPriority priority);
+            "{ 'title': { $regex: ?1, $options: 'i' } }, " +
+            "{ 'description': { $regex: ?1, $options: 'i' } }, " +
+            "{ 'tags': { $in: ?2 } }, " +
+            "{ 'priority': ?3 } ] }")
+    List<Task> findByUserIdAndAdvancedSearch(String userId, String searchTerm, List<String> tags,
+            Task.TaskPriority priority);
 
     // Count tasks by user ID and status
     long countByUserIdAndStatus(String userId, Task.TaskStatus status);
 
     // Delete all tasks by user ID
     void deleteByUserId(String userId);
+
+    // Find tasks by user ID and tag ID
+    @Query("{ 'userId': ?0, 'tags': { $elemMatch: { $eq: ?1 } } }")
+    List<Task> findByUserIdAndTagId(String userId, String tagId);
 }

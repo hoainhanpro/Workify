@@ -45,7 +45,7 @@ public class TaskService {
         // Extract hashtags for tag search
         String[] words = searchTerm.split("\\s+");
         StringBuilder cleanTermBuilder = new StringBuilder();
-        
+
         for (String word : words) {
             if (word.startsWith("#") && word.length() > 1) {
                 // Extract tag (remove #)
@@ -61,7 +61,7 @@ public class TaskService {
                 cleanTermBuilder.append(word);
             }
         }
-        
+
         cleanSearchTerm = cleanTermBuilder.toString().trim();
 
         // If we have tags or priority, use advanced search
@@ -77,7 +77,7 @@ public class TaskService {
     private boolean isPriorityKeyword(String word) {
         String lowerWord = word.toLowerCase();
         return lowerWord.equals("low") || lowerWord.equals("medium") || lowerWord.equals("high") ||
-               lowerWord.equals("thấp") || lowerWord.equals("trung") || lowerWord.equals("cao");
+                lowerWord.equals("thấp") || lowerWord.equals("trung") || lowerWord.equals("cao");
     }
 
     // Helper method to parse priority keyword
@@ -158,9 +158,26 @@ public class TaskService {
         }
 
         // Getters
-        public long getTotal() { return total; }
-        public long getTodo() { return todo; }
-        public long getInProgress() { return inProgress; }
-        public long getCompleted() { return completed; }
+        public long getTotal() {
+            return total;
+        }
+
+        public long getTodo() {
+            return todo;
+        }
+
+        public long getInProgress() {
+            return inProgress;
+        }
+
+        public long getCompleted() {
+            return completed;
+        }
+    }
+
+    // Get tasks by tag ID for a user
+    public List<Task> getTasksByTagId(String userId, String tagId) {
+        // Implement logic to fetch tasks by tagId
+        return taskRepository.findByUserIdAndTagId(userId, tagId);
     }
 }

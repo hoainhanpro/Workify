@@ -41,7 +41,7 @@ const Tasks = () => {
 
       setSearchLoading(true)
       try {
-        const response = await taskService.searchTasks(term)
+        const response = await taskService.searchTasksByTagId(term)
         if (response.success) {
           setSearchResults(response.data)
           setIsSearching(true)

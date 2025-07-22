@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/tasks")
-@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:5173"})
+@CrossOrigin(origins = { "http://localhost:3000", "http://localhost:5173" })
 @PreAuthorize("hasRole('USER')")
 public class TaskController {
 
@@ -60,7 +60,7 @@ public class TaskController {
         try {
             String userId = SecurityUtils.getCurrentUserId();
             Optional<Task> task = taskService.getTaskByIdAndUserId(taskId, userId);
-            
+
             if (task.isPresent()) {
                 response.put("success", true);
                 response.put("data", new TaskResponse(task.get()));
@@ -155,12 +155,12 @@ public class TaskController {
     /**
      * Get tasks by tag for the current user
      */
-    @GetMapping("/tag/{tag}")
-    public ResponseEntity<Map<String, Object>> getTasksByTag(@PathVariable String tag) {
+    @GetMapping("/tag/{tagId}")
+    public ResponseEntity<Map<String, Object>> getTasksByTag(@PathVariable String tagId) {
         Map<String, Object> response = new HashMap<>();
         try {
             String userId = SecurityUtils.getCurrentUserId();
-            List<Task> tasks = taskService.getTasksByUserIdAndTag(userId, tag);
+            List<Task> tasks = taskService.getTasksByTagId(userId, tagId);
             List<TaskResponse> taskResponses = tasks.stream()
                     .map(TaskResponse::new)
                     .collect(Collectors.toList());
@@ -168,7 +168,7 @@ public class TaskController {
             response.put("success", true);
             response.put("data", taskResponses);
             response.put("count", taskResponses.size());
-            response.put("tag", tag);
+            response.put("tagId", tagId);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             response.put("success", false);
@@ -186,7 +186,7 @@ public class TaskController {
         try {
             String userId = SecurityUtils.getCurrentUserId();
             TaskService.TaskStatistics stats = taskService.getTaskStatistics(userId);
-            
+
             Map<String, Object> statisticsData = new HashMap<>();
             statisticsData.put("total", stats.getTotal());
             statisticsData.put("todo", stats.getTodo());
@@ -211,7 +211,7 @@ public class TaskController {
         Map<String, Object> response = new HashMap<>();
         try {
             String userId = SecurityUtils.getCurrentUserId();
-            
+
             Task task = new Task();
             task.setTitle(taskRequest.getTitle());
             task.setDescription(taskRequest.getDescription());
@@ -243,7 +243,7 @@ public class TaskController {
         Map<String, Object> response = new HashMap<>();
         try {
             String userId = SecurityUtils.getCurrentUserId();
-            
+
             Task updatedTask = new Task();
             updatedTask.setTitle(taskRequest.getTitle());
             updatedTask.setDescription(taskRequest.getDescription());
@@ -252,7 +252,7 @@ public class TaskController {
             updatedTask.setTags(taskRequest.getTags());
 
             Optional<Task> result = taskService.updateTask(taskId, userId, updatedTask);
-            
+
             if (result.isPresent()) {
                 response.put("success", true);
                 response.put("message", "Task updated successfully");
@@ -279,7 +279,7 @@ public class TaskController {
         try {
             String userId = SecurityUtils.getCurrentUserId();
             boolean deleted = taskService.deleteTask(taskId, userId);
-            
+
             if (deleted) {
                 response.put("success", true);
                 response.put("message", "Task deleted successfully");
