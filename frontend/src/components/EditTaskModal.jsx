@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react'
+import TagSelector from './TagSelector'
 
-const EditTaskModal = ({ show, onHide, task, onTaskUpdated }) => {
-  const [formData, setFormData] = useState({
+const EditTaskModal = ({ show, onHide, task, onTaskUpdated, availableTags }) => {  const [formData, setFormData] = useState({
     title: '',
     description: '',
     priority: 'MEDIUM',
     status: 'TODO',
+    tags: [],
     dueDate: '',
     syncWithCalendar: false,
     subTasks: [],
@@ -13,25 +14,44 @@ const EditTaskModal = ({ show, onHide, task, onTaskUpdated }) => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [subTaskInput, setSubTaskInput] = useState('')
-  const [showSubTasks, setShowSubTasks] = useState(false)
-  // Initialize form data when task changes
+  const [showSubTasks, setShowSubTasks] = useState(false)  // Initialize form data when task changes
   useEffect(() => {
     if (task) {
       const formattedDueDate = task.dueDate ? 
         new Date(task.dueDate).toISOString().slice(0, 16) : '';
+      
+      // Convert tag names to tag IDs for TagSelector if needed
+      let tagIds = task.tags || [];
+      if (availableTags && availableTags.length > 0 && task.tags && task.tags.length > 0) {
+        // Check if tags are names (string) or IDs by trying to find matches
+        const isTagNames = task.tags.some(tag => 
+          availableTags.some(availableTag => availableTag.name === tag)
+        );
+        
+        if (isTagNames) {
+          // Convert tag names to tag IDs
+          tagIds = task.tags
+            .map(tagName => {
+              const found = availableTags.find(t => t.name === tagName);
+              return found ? found.id : null;
+            })
+            .filter(id => id !== null);
+        }
+      }
       
       setFormData({
         title: task.title || '',
         description: task.description || '',
         priority: task.priority || 'MEDIUM',
         status: task.status || 'TODO',
+        tags: tagIds,
         dueDate: formattedDueDate,
         syncWithCalendar: task.syncWithCalendar || false,
         subTasks: task.subTasks || [],
       })
       setShowSubTasks(task.subTasks && task.subTasks.length > 0)
     }
-  }, [task])
+  }, [task, availableTags])
 
   // Close modal on ESC key
   useEffect(() => {
@@ -46,18 +66,33 @@ const EditTaskModal = ({ show, onHide, task, onTaskUpdated }) => {
       document.body.style.overflow = 'hidden'
     } else {
       document.body.style.overflow = 'unset'
-    }
-
-    return () => {
+    }    return () => {
       document.removeEventListener('keydown', handleEscKey)
       document.body.style.overflow = 'unset'
     }
   }, [show, loading])
+
   const handleInputChange = (e) => {
     const { name, value } = e.target
     setFormData(prev => ({
       ...prev,
       [name]: value
+    }))
+  }
+
+  const handleAddTag = (tagId) => {
+    if (!formData.tags.includes(tagId)) {
+      setFormData(prev => ({
+        ...prev,
+        tags: [...prev.tags, tagId]
+      }))
+    }
+  }
+
+  const handleRemoveTag = (tagId) => {
+    setFormData(prev => ({
+      ...prev,
+      tags: prev.tags.filter(tag => tag !== tagId)
     }))
   }
 
@@ -103,10 +138,17 @@ const EditTaskModal = ({ show, onHide, task, onTaskUpdated }) => {
       // Validate required fields
       if (!formData.title.trim()) {
         throw new Error('Tiêu đề là bắt buộc')
-      }
-
-      // Process form data before sending
+      }      // Process form data before sending
       const processedData = { ...formData }
+      
+      // Convert tag IDs back to tag names for backend
+      if (processedData.tags && processedData.tags.length > 0 && availableTags && availableTags.length > 0) {
+        processedData.tags = processedData.tags
+          .map(tagId => {
+            const found = availableTags.find(t => t.id === tagId);
+            return found ? found.name : tagId; // Fallback to original if not found
+          });
+      }
       
       // Convert due date to ISO string if provided
       if (processedData.dueDate) {
@@ -301,8 +343,22 @@ const EditTaskModal = ({ show, onHide, task, onTaskUpdated }) => {
                         Cần có hạn hoàn thành để đồng bộ
                       </div>
                     )}
-                  </div>
-                </div>              </div>
+                  </div>                </div>              </div>
+
+              {/* Tags */}
+              <div className="mb-3">
+                <label className="form-label">Tags</label>
+                <TagSelector
+                  availableTags={availableTags || []}
+                  selectedTags={formData.tags}
+                  onAddTag={handleAddTag}
+                  onRemoveTag={handleRemoveTag}
+                  disabled={loading}
+                />
+                <div className="form-text">
+                  Chọn tag để phân loại nhiệm vụ
+                </div>
+              </div>
 
               {/* Subtasks */}
               <div className="mb-3">

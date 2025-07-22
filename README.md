@@ -191,77 +191,113 @@ JWT_EXPIRATION=86400
 SERVER_PORT=8080
 ```
 
-## Roadmap
+# Roadmap Dự Án Workify
 
-Giai đoạn 1: Cơ bản & Hoạt động cá nhân
-[✔️] Authentication & Authorization - 
-→ Đăng nhập bằng JWT + OAuth2 Google
+Dự án Workify là một ứng dụng quản lý công việc và ghi chú, được phát triển với Backend sử dụng Spring Boot (RESTful API), Frontend sử dụng ReactJS, và Database là MongoDB.
 
-[✔️] Note Management (CRUD) - 
-    ✔️ Tạo / sửa / xóa ghi chú
-	✔️ Rich text editor (In đậm, nghiêng, gạch chân, heading (dùng Tiptap/Quill))
-    ✔️ Checklist: Checkbox trong note
-    ❌ Table trong nội dung của note 
-    ✔️ Tải lên file (local): Upload file, preview, tải xuống
-    ✔️ Gắn tag, pin note: Thêm trường tags, isPinned
-    ✔️ Tìm kiếm, filter note: Tìm theo keyword, tag
-    ✔️ Cho lưu cả ảnh vào dưới dạng base64 
-    ✔️ Export note (PDF, HTML): Export nội dung ghi chú
-    ✔️ Lưu lịch sử chỉnh sửa: Versioning hoặc undo/redo
-    
+## Giai đoạn 1: Chức Năng Cốt Lõi & Hoạt Động Cá Nhân (Core & Personal Functionality)
 
-[✔️] Task Management (CRUD + Subtasks) 
-→ Tạo task chính + subtasks, phân loại mức độ ưu tiên
+**Mục tiêu:** Xây dựng nền tảng ứng dụng vững chắc cho người dùng cá nhân.
 
-[✔️] Search & Filter
-→ Tìm kiếm task theo từ khoá, mức độ, thời gian
+**Nhiệm vụ & Tiến độ:**
 
-⚙️ Giai đoạn 2: Mở rộng không gian làm việc (Workspace)
-[✔️] Workspace Creation 
-→ Tạo workspace để làm việc nhóm
+* **Authentication & Authorization**
+    * Đăng nhập bằng JWT + OAuth2 Google (✔️)
 
-[✔️] Member Management & Role-Based Access
-→ Mời thành viên, gán quyền (quản lý / thành viên / xem-only)
+* **Note Management (CRUD & Nâng cao cơ bản)**
+    * Tạo / sửa / xóa ghi chú (✔️)
+    * Rich text editor (In đậm, nghiêng, gạch chân, heading dùng Quill) (✔️)
+    * Checklist, checkbox (✔️)
+    * Table trong nội dung (⚙️)
+    * Tải lên file (local), preview, tải xuống (✔️)
+    * Gắn tag, pin, filter tìm kiếm (✔️)
+    * Cho lưu cả ảnh vào dưới dạng base64 (✔️)
+    * Export note (PDF, HTML) (✔️)
+    * Lưu lịch sử chỉnh sửa (versioning hoặc undo/redo) (✔️)
 
-[❌] Shared Task/Note in Workspace -
-→ Phân công task & note cho các thành viên
+* **Task Management (CRUD + Subtasks)**
+    * Tạo / sửa / xóa task (✔️)
+    * Tạo / sửa / xóa subtask (✔️)
+    * Tìm kiếm task theo từ khoá, mức độ (✔️)
 
-[❌] Note Management Advance 1 - 
-    ❌ Uploadfile: Tích hợp Drive API cho lưu trữ file lớn khi người dùng cấp quyền
-    ❌ Chia sẻ note (workspace): Chia sẻ quyền xem/sửa note
+* **Recording & Audio File Management**
+    * Ghi âm trực tiếp trong ứng dụng (❌)
+    * Lưu trữ và quản lý file ghi âm (❌)
 
-🤖 Giai đoạn 3: AI & Tích hợp thông minh
-[❌] AI Task Planner (API tích hợp)
-→ Gợi ý nội dung & timeline cho task bằng AI như Gemini, GPT
+## Giai đoạn 2: Hợp Tác & Thông Báo (Collaboration & Notification)
 
-[❌] AI Summary for Meeting Recordings
-→ Ghi âm + tóm tắt nội dung bằng AI bên thứ ba
+**Mục tiêu:** Mở rộng khả năng làm việc nhóm và thiết lập hệ thống thông báo cơ bản.
 
-[❌] Note Assistant (AI)
-    ❌ Tích hợp AI tóm tắt: Gửi nội dung note đến AI, nhận tóm tắt
+**Nhiệm vụ & Tiến độ:**
 
-🔔 Giai đoạn 4: Notification & Lịch
-[❌] Notification System -  
-→ Gửi thông báo qua email, Telegram, hoặc Zalo (tùy cấu hình)
+* **Workspace Management**
+    * Tạo / sửa / xóa workspace làm việc nhóm (⚙️)
+    * Member Management: Gửi lời mời tham gia (⚙️)
+    * Role-Based Access: Cấp quyền cho người tham gia (⚙️)
 
-[❌] Push Notification in Web UI -  
-→ Hiện cảnh báo gần deadline, được giao task mới
+* **Notification System**
+    * Thông báo lời mời tham gia workspace (❌)
+    * Gửi thông báo qua email, Telegram (tùy cấu hình) (❌)
+    * Hiện cảnh báo gần deadline, được giao task mới (❌)
 
-[❌]Calendar Integration
-→ Tích hợp lịch (FullCalendar UI) để theo dõi task
+* **Calendar Integration**
+    * Tích hợp lịch (FullCalendar UI) để theo dõi task (✔️)
+    * Meeting Scheduling: Lên lịch cho cuộc họp (❌)
 
-[❌]Google Calendar Sync (optional)
-→ Đồng bộ task deadline với lịch Google của người dùng
+## Giai đoạn 3: Tích Hợp Nâng Cao & Chia Sẻ (Advanced Integration & Sharing)
 
-📊 Giai đoạn 5: Theo dõi hiệu suất & báo cáo
-[❌] Progress Chart & Ranking
-→ Biểu đồ mức độ hoàn thành task cá nhân & nhóm
+**Mục tiêu:** Tích hợp với các dịch vụ bên ngoài và triển khai các tính năng chia sẻ nâng cao trong không gian làm việc.
 
-[❌] Activity Log & Audit Trail
-→ Lưu lịch sử thao tác của người dùng
+**Nhiệm vụ & Tiến độ:**
 
-[❌] Dashboard Tổng quan dự án / cá nhân
-→ Xem nhanh trạng thái các workspace/task đang theo dõi
+* **Shared Task/Note in Workspace**
+    * Phân công task & note cho các thành viên (❌)
+    * Chia sẻ quyền xem/sửa note (❌)
+
+* **Advanced File Management**
+    * Tích hợp Drive API cho lưu trữ file lớn khi người dùng cấp quyền (❌)
+
+* **External Calendar Sync**
+    * Đồng bộ task deadline với lịch Google của người dùng (❌)
+
+* **Email Management**
+    * Quản lý thư từ email người dùng khi được cấp phép (❌)
+
+* **Template Management (Task/Note)**
+    * Tạo/Lưu mẫu: Lưu các Task/Note hiện có thành mẫu (❌)
+    * Quản lý mẫu: Xem, sửa, xóa các mẫu đã lưu (❌)
+    * Sử dụng mẫu: Tạo Task/Note mới từ các mẫu có sẵn (❌)
+    * Chia sẻ mẫu: Chia sẻ các mẫu Task/Note trong Workspace (❌)
+
+## Giai đoạn 4: Theo Dõi Hiệu Suất & Báo Cáo (Performance Tracking & Reporting)
+
+**Mục tiêu:** Cung cấp công cụ để người dùng theo dõi tiến độ và hiệu suất làm việc cá nhân/nhóm.
+
+**Nhiệm vụ & Tiến độ:**
+
+* **Progress & Ranking**
+    * Biểu đồ mức độ hoàn thành task cá nhân & nhóm (❌)
+
+* **Activity Logging**
+    * Lưu lịch sử thao tác của người dùng (❌)
+
+* **Overview Dashboard**
+    * Xem nhanh trạng thái các workspace/task đang theo dõi (❌)
+
+## Giai đoạn 5: AI & Tính Năng Thông Minh (AI & Smart Features)
+
+**Mục tiêu:** Tích hợp trí tuệ nhân tạo để nâng cao trải nghiệm và hiệu quả làm việc.
+
+**Nhiệm vụ & Tiến độ:**
+
+* **AI Task Planning**
+    * Gợi ý nội dung & timeline cho task bằng AI như Gemini, GPT (❌)
+
+* **AI Meeting Summary**
+    * Ghi âm + tóm tắt nội dung bằng AI bên thứ ba (❌)
+
+* **Note Assistant (AI)**
+    * Gửi nội dung note đến AI, nhận tóm tắt (❌)
 
 
 

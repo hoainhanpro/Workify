@@ -29,6 +29,7 @@ function App() {
           config={{
             plugins: [ReactPlugin]
           }}
+          enabled={import.meta.env.DEV}
         />
         
         <Routes>

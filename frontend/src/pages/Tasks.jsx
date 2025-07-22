@@ -407,6 +407,7 @@ const Tasks = () => {
         }}
         task={selectedTask}
         onTaskUpdated={handleUpdateTask}
+        availableTags={availableTags}
       />
 
       {/* Confirm Delete Modal */}
