@@ -420,14 +420,14 @@ const CreateTaskModal = ({ show, onHide, onTaskCreated, availableTags }) => {
                   />
                   <label className="form-check-label" htmlFor="shareToWorkspace">
                     <i className="bi bi-building me-1"></i>
-                    Chia sẻ với Workspace
+                    Chia sẻ với Nhóm
                   </label>
                 </div>
 
                 {formData.shareToWorkspace && (
                   <div className="mt-3">
                     <div className="mb-3">
-                      <label className="form-label">Chọn Workspace</label>
+                      <label className="form-label">Chọn Nhóm</label>
                       <select
                         className="form-control"
                         name="workspaceId"
@@ -452,7 +452,7 @@ const CreateTaskModal = ({ show, onHide, onTaskCreated, availableTags }) => {
                     </div>
 
                     <div className="mb-3">
-                      <label className="form-label">Quyền trong Workspace</label>
+                      <label className="form-label">Quyền trong Nhóm</label>
                       <div className="form-check">
                         <input
                           className="form-check-input"

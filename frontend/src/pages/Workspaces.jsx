@@ -169,12 +169,12 @@ const Workspaces = () => {
       <div className="row">
         <div className="col-12">
           <div className="d-flex justify-content-between align-items-center mb-4">
-            <h2>Workspaces</h2>
+            <h2>Quản lý Nhóm</h2>
             <button 
               className="btn btn-primary" 
               onClick={() => setShowCreateModal(true)}
             >
-              <i className="bi bi-plus"></i> Tạo Workspace
+              <i className="bi bi-plus"></i> Tạo Nhóm
             </button>
           </div>
 
@@ -239,7 +239,7 @@ const Workspaces = () => {
                   <div className="card h-100">
                     <div className="card-body">
                       <div className="d-flex justify-content-between align-items-start mb-3">
-                        <h5 className="card-title">{workspace.name || 'Unnamed Workspace'}</h5>
+                        <h5 className="card-title">{workspace.name || 'Unnamed Group'}</h5>
                         <span className={`badge bg-${getRoleColor(workspace.userRole || 'VIEWER')}`}>
                           {workspace.userRole || 'VIEWER'}
                         </span>
@@ -311,7 +311,7 @@ const Workspaces = () => {
           <div className="modal-dialog">
             <div className="modal-content">
               <div className="modal-header">
-                <h5 className="modal-title">Tạo Workspace Mới</h5>
+                <h5 className="modal-title">Tạo Nhóm Mới</h5>
                 <button 
                   type="button" 
                   className="btn-close"
@@ -321,7 +321,7 @@ const Workspaces = () => {
               <form onSubmit={handleCreateWorkspace}>
                 <div className="modal-body">
                   <div className="mb-3">
-                    <label htmlFor="workspaceName" className="form-label">Tên Workspace</label>
+                    <label htmlFor="workspaceName" className="form-label">Tên Nhóm</label>
                     <input
                       type="text"
                       className="form-control"

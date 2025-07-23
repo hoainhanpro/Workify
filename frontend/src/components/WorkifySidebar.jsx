@@ -12,12 +12,6 @@ const WorkifySidebar = () => {
       description: 'Tổng quan'
     },
     {
-      path: '/workify/workspaces',
-      icon: 'bi-building',
-      label: 'Workspaces',
-      description: 'Không gian làm việc'
-    },
-    {
       path: '/workify/mail',
       icon: 'bi-envelope',
       label: 'Hộp thư đến',
@@ -48,10 +42,10 @@ const WorkifySidebar = () => {
       description: 'Lập kế hoạch'
     },
     {
-      path: '/workify/team',
+      path: '/workify/workspaces',
       icon: 'bi-people',
       label: 'Nhóm',
-      description: 'Cộng tác viên'
+      description: 'Không gian làm việc'
     }
   ]
 

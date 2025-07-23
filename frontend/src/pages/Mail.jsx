@@ -24,7 +24,7 @@ const Mail = () => {
       { id: 'inbox', name: 'Hộp thư đến', icon: 'bi-inbox', count: 15 },
       { id: 'starred', name: 'Đã đánh dấu sao', icon: 'bi-star', count: 3 },
       { id: 'sent', name: 'Đã gửi', icon: 'bi-send', count: 8 },
-      { id: 'invitations', name: 'Lời mời workspace', icon: 'bi-people-fill', count: pendingInvitationCount }
+      { id: 'invitations', name: 'Lời mời nhóm', icon: 'bi-people-fill', count: pendingInvitationCount }
     ]
   }
 
@@ -373,7 +373,7 @@ const Mail = () => {
       setLoadingInvitations(true)
       setInvitationError('')
       
-      console.log('Đang tải workspace invitations từ API...')
+      console.log('Đang tải lời mời nhóm từ API...')
       
       // Enable API call để tải invitations thật
       const response = await workspaceInvitationService.getPendingInvitations()
@@ -392,7 +392,7 @@ const Mail = () => {
       
     } catch (error) {
       console.error('Error loading workspace invitations:', error)
-      setInvitationError(`Không thể tải lời mời workspace: ${error.message}`)
+      setInvitationError(`Không thể tải lời mời nhóm: ${error.message}`)
       // Fallback to empty array so UI doesn't break
       setWorkspaceInvitations([])
     } finally {
@@ -408,7 +408,7 @@ const Mail = () => {
       // Clear selected mail to refresh view
       setSelectedMail(null)
       // Show success message
-      alert('Đã chấp nhận lời mời workspace thành công!')
+      alert('Đã chấp nhận lời mời nhóm thành công!')
     } catch (error) {
       console.error('Error accepting invitation:', error)
       alert('Không thể chấp nhận lời mời. Vui lòng thử lại sau.')
@@ -423,7 +423,7 @@ const Mail = () => {
       // Clear selected mail to refresh view
       setSelectedMail(null)
       // Show success message
-      alert('Đã từ chối lời mời workspace.')
+      alert('Đã từ chối lời mời nhóm.')
     } catch (error) {
       console.error('Error declining invitation:', error)
       alert('Không thể từ chối lời mời. Vui lòng thử lại sau.')
@@ -440,7 +440,7 @@ const Mail = () => {
           // Provide fallback values for missing data
           const safeInvitation = {
             id: invitation?.id || `temp_${index}`,
-            workspaceName: invitation?.workspaceName || 'Unknown Workspace',
+            workspaceName: invitation?.workspaceName || 'Unknown Group',
             workspaceDescription: invitation?.workspaceDescription || 'Không có mô tả',
             role: invitation?.role || 'MEMBER',
             inviterName: invitation?.inviterName || 'Unknown User',
@@ -466,12 +466,12 @@ const Mail = () => {
             id: `invitation_${safeInvitation.id}`,
             sender: safeInvitation.inviterName,
             email: safeInvitation.inviterEmail,
-            subject: `Lời mời tham gia workspace: ${safeInvitation.workspaceName}`,
-            preview: `Bạn được mời tham gia workspace "${safeInvitation.workspaceName}" với vai trò ${safeInvitation.role}. ${safeInvitation.status === 'PENDING' ? 'Hãy chấp nhận để bắt đầu cộng tác!' : `Trạng thái: ${safeInvitation.status}`}`,
+            subject: `Lời mời tham gia nhóm: ${safeInvitation.workspaceName}`,
+            preview: `Bạn được mời tham gia nhóm "${safeInvitation.workspaceName}" với vai trò ${safeInvitation.role}. ${safeInvitation.status === 'PENDING' ? 'Hãy chấp nhận để bắt đầu cộng tác!' : `Trạng thái: ${safeInvitation.status}`}`,
             content: `
               <div class="workspace-invitation-card">
-                <h5>🏢 Lời mời tham gia Workspace</h5>
-                <p><strong>Workspace:</strong> ${safeInvitation.workspaceName}</p>
+                <h5>👥 Lời mời tham gia Nhóm</h5>
+                <p><strong>Nhóm:</strong> ${safeInvitation.workspaceName}</p>
                 <p><strong>Mô tả:</strong> ${safeInvitation.workspaceDescription}</p>
                 <p><strong>Vai trò:</strong> <span class="badge bg-primary">${safeInvitation.role}</span></p>
                 <p><strong>Người mời:</strong> ${safeInvitation.inviterName}</p>
@@ -655,7 +655,7 @@ const Mail = () => {
                     <div className="spinner-border text-primary" role="status">
                       <span className="visually-hidden">Đang tải...</span>
                     </div>
-                    <p className="text-muted mt-3">Đang tải lời mời workspace...</p>
+                    <p className="text-muted mt-3">Đang tải lời mời nhóm...</p>
                   </div>
                 ) : invitationError && selectedCategory === 'invitations' ? (
                   <div className="text-center py-5">
@@ -674,13 +674,13 @@ const Mail = () => {
                     <i className={`bi ${selectedCategory === 'invitations' ? 'bi-people-fill' : 'bi-inbox'} fs-1 text-muted`}></i>
                     <p className="text-muted mt-3">
                       {selectedCategory === 'invitations' 
-                        ? 'Không có lời mời workspace nào'
+                        ? 'Không có lời mời nhóm nào'
                         : 'Không có email nào'
                       }
                     </p>
                     {selectedCategory === 'invitations' && (
                       <small className="text-muted">
-                        Khi có lời mời tham gia workspace mới, chúng sẽ xuất hiện ở đây.
+                        Khi có lời mời tham gia nhóm mới, chúng sẽ xuất hiện ở đây.
                       </small>
                     )}
                   </div>

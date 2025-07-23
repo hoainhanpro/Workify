@@ -81,9 +81,9 @@ const Home = () => {
               <div className="bg-info bg-opacity-10 rounded-3 p-3 d-inline-block mb-3">
                 <i className="bi bi-people text-info fs-1"></i>
               </div>
-              <h5 className="card-title">Cộng tác nhóm</h5>
+              <h5 className="card-title">Quản lý Workspace</h5>
               <p className="card-text text-muted">
-                Làm việc nhóm hiệu quả với các công cụ chia sẻ và cộng tác real-time.
+                Tạo và quản lý không gian làm việc với các công cụ chia sẻ và cộng tác hiệu quả.
               </p>
             </div>
           </div>

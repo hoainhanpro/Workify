@@ -466,7 +466,7 @@ public class NoteController {
     }
 
     /**
-     * GĐ6: Tìm kiếm notes theo nhiều tagIds
+     * GĐ6: Tìm kiếm notes theo nhiều tagIds (POST method)
      */
     @PostMapping("/search/tags")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
@@ -493,6 +493,7 @@ public class NoteController {
             List<NoteResponse> notes = noteService.searchNotesByTags(userId, tagIds);
             response.put("success", true);
             response.put("data", notes);
+            response.put("total", notes.size());
             return ResponseEntity.ok(response);
 
         } catch (IllegalArgumentException e) {
@@ -502,6 +503,82 @@ public class NoteController {
         } catch (Exception e) {
             response.put("success", false);
             response.put("message", "Lỗi khi tìm kiếm notes theo tags: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    /**
+     * GĐ6: Tìm kiếm notes theo tagIds (GET method với query parameters)
+     */
+    @GetMapping("/search/tags")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    public ResponseEntity<Map<String, Object>> searchNotesByTagsGet(
+            @RequestParam("tagIds") List<String> tagIds,
+            HttpServletRequest httpRequest) {
+
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            String userId = (String) httpRequest.getAttribute("userId");
+            if (userId == null) {
+                response.put("success", false);
+                response.put("message", "Người dùng chưa được xác thực");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+            }
+
+            if (tagIds == null || tagIds.isEmpty()) {
+                response.put("success", false);
+                response.put("message", "Danh sách tag không được để trống");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+            }
+
+            List<NoteResponse> notes = noteService.searchNotesByTags(userId, tagIds);
+            response.put("success", true);
+            response.put("data", notes);
+            response.put("total", notes.size());
+            return ResponseEntity.ok(response);
+
+        } catch (IllegalArgumentException e) {
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Lỗi khi tìm kiếm notes theo tags: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    /**
+     * GĐ6: Tìm kiếm notes theo từ khóa (GET method với endpoint riêng)
+     */
+    @GetMapping("/search/keyword")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    public ResponseEntity<Map<String, Object>> searchNotesByKeyword(
+            @RequestParam String keyword,
+            HttpServletRequest httpRequest) {
+
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            String userId = (String) httpRequest.getAttribute("userId");
+            if (userId == null) {
+                response.put("success", false);
+                response.put("message", "Người dùng chưa được xác thực");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+            }
+
+            List<NoteResponse> searchResults = noteService.searchNotesByKeyword(userId, keyword);
+            response.put("success", true);
+            response.put("message", "Tìm kiếm notes theo từ khóa '" + keyword + "' thành công");
+            response.put("data", searchResults);
+            response.put("total", searchResults.size());
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Lỗi khi tìm kiếm notes theo từ khóa: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
