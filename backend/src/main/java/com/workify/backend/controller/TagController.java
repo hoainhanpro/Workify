@@ -33,12 +33,12 @@ import jakarta.validation.Valid;
  */
 @RestController
 @RequestMapping("/api/tags")
-@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:5173"})
+@CrossOrigin(origins = { "http://localhost:3000", "http://localhost:5173" })
 public class TagController {
-    
+
     @Autowired
     private TagService tagService;
-    
+
     /**
      * Tạo tag mới
      */
@@ -47,9 +47,9 @@ public class TagController {
     public ResponseEntity<Map<String, Object>> createTag(
             @Valid @RequestBody TagCreateRequest request,
             HttpServletRequest httpRequest) {
-        
+
         Map<String, Object> response = new HashMap<>();
-        
+
         try {
             String userId = (String) httpRequest.getAttribute("userId");
             if (userId == null) {
@@ -57,13 +57,13 @@ public class TagController {
                 response.put("message", "Người dùng chưa được xác thực");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
             }
-            
+
             TagResponse createdTag = tagService.createTag(request, userId);
             response.put("success", true);
             response.put("message", "Tạo tag thành công");
             response.put("data", createdTag);
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
-            
+
         } catch (IllegalArgumentException e) {
             response.put("success", false);
             response.put("message", e.getMessage());
@@ -74,16 +74,16 @@ public class TagController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
-    
+
     /**
      * Lấy tất cả tags của user
      */
     @GetMapping
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     public ResponseEntity<Map<String, Object>> getAllTags(HttpServletRequest httpRequest) {
-        
+
         Map<String, Object> response = new HashMap<>();
-        
+
         try {
             String userId = (String) httpRequest.getAttribute("userId");
             if (userId == null) {
@@ -91,19 +91,19 @@ public class TagController {
                 response.put("message", "Người dùng chưa được xác thực");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
             }
-            
+
             List<TagResponse> tags = tagService.getAllTagsByUser(userId);
             response.put("success", true);
             response.put("data", tags);
             return ResponseEntity.ok(response);
-            
+
         } catch (Exception e) {
             response.put("success", false);
             response.put("message", "Lỗi khi lấy danh sách tags: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
-    
+
     /**
      * Lấy tag theo ID
      */
@@ -112,9 +112,9 @@ public class TagController {
     public ResponseEntity<Map<String, Object>> getTagById(
             @PathVariable String id,
             HttpServletRequest httpRequest) {
-        
+
         Map<String, Object> response = new HashMap<>();
-        
+
         try {
             String userId = (String) httpRequest.getAttribute("userId");
             if (userId == null) {
@@ -122,9 +122,9 @@ public class TagController {
                 response.put("message", "Người dùng chưa được xác thực");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
             }
-            
+
             Optional<TagResponse> tag = tagService.getTagById(id, userId);
-            
+
             if (tag.isPresent()) {
                 response.put("success", true);
                 response.put("data", tag.get());
@@ -134,14 +134,14 @@ public class TagController {
                 response.put("message", "Không tìm thấy tag");
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
             }
-            
+
         } catch (Exception e) {
             response.put("success", false);
             response.put("message", "Lỗi khi lấy thông tin tag: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
-    
+
     /**
      * Cập nhật tag
      */
@@ -151,9 +151,9 @@ public class TagController {
             @PathVariable String id,
             @Valid @RequestBody TagUpdateRequest request,
             HttpServletRequest httpRequest) {
-        
+
         Map<String, Object> response = new HashMap<>();
-        
+
         try {
             String userId = (String) httpRequest.getAttribute("userId");
             if (userId == null) {
@@ -161,9 +161,9 @@ public class TagController {
                 response.put("message", "Người dùng chưa được xác thực");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
             }
-            
+
             Optional<TagResponse> updatedTag = tagService.updateTag(id, request, userId);
-            
+
             if (updatedTag.isPresent()) {
                 response.put("success", true);
                 response.put("message", "Cập nhật tag thành công");
@@ -174,7 +174,7 @@ public class TagController {
                 response.put("message", "Không tìm thấy tag hoặc bạn không có quyền chỉnh sửa");
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
             }
-            
+
         } catch (IllegalArgumentException e) {
             response.put("success", false);
             response.put("message", e.getMessage());
@@ -185,7 +185,7 @@ public class TagController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
-    
+
     /**
      * Xóa tag
      */
@@ -194,9 +194,9 @@ public class TagController {
     public ResponseEntity<Map<String, Object>> deleteTag(
             @PathVariable String id,
             HttpServletRequest httpRequest) {
-        
+
         Map<String, Object> response = new HashMap<>();
-        
+
         try {
             String userId = (String) httpRequest.getAttribute("userId");
             if (userId == null) {
@@ -204,9 +204,9 @@ public class TagController {
                 response.put("message", "Người dùng chưa được xác thực");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
             }
-            
+
             boolean deleted = tagService.deleteTag(id, userId);
-            
+
             if (deleted) {
                 response.put("success", true);
                 response.put("message", "Xóa tag thành công");
@@ -216,14 +216,14 @@ public class TagController {
                 response.put("message", "Không tìm thấy tag hoặc bạn không có quyền xóa");
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
             }
-            
+
         } catch (Exception e) {
             response.put("success", false);
             response.put("message", "Lỗi khi xóa tag: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
-    
+
     /**
      * Tìm kiếm tags theo tên
      */
@@ -232,9 +232,9 @@ public class TagController {
     public ResponseEntity<Map<String, Object>> searchTags(
             @RequestParam String keyword,
             HttpServletRequest httpRequest) {
-        
+
         Map<String, Object> response = new HashMap<>();
-        
+
         try {
             String userId = (String) httpRequest.getAttribute("userId");
             if (userId == null) {
@@ -242,19 +242,19 @@ public class TagController {
                 response.put("message", "Người dùng chưa được xác thực");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
             }
-            
+
             List<TagResponse> tags = tagService.searchTagsByName(userId, keyword);
             response.put("success", true);
             response.put("data", tags);
             return ResponseEntity.ok(response);
-            
+
         } catch (Exception e) {
             response.put("success", false);
             response.put("message", "Lỗi khi tìm kiếm tags: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
-    
+
     /**
      * Lấy tags theo màu sắc
      */
@@ -263,9 +263,9 @@ public class TagController {
     public ResponseEntity<Map<String, Object>> getTagsByColor(
             @PathVariable String color,
             HttpServletRequest httpRequest) {
-        
+
         Map<String, Object> response = new HashMap<>();
-        
+
         try {
             String userId = (String) httpRequest.getAttribute("userId");
             if (userId == null) {
@@ -273,28 +273,28 @@ public class TagController {
                 response.put("message", "Người dùng chưa được xác thực");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
             }
-            
+
             List<TagResponse> tags = tagService.getTagsByColor(userId, "#" + color);
             response.put("success", true);
             response.put("data", tags);
             return ResponseEntity.ok(response);
-            
+
         } catch (Exception e) {
             response.put("success", false);
             response.put("message", "Lỗi khi lấy tags theo màu: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
-    
+
     /**
      * Lấy thống kê tags
      */
     @GetMapping("/stats")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     public ResponseEntity<Map<String, Object>> getTagStats(HttpServletRequest httpRequest) {
-        
+
         Map<String, Object> response = new HashMap<>();
-        
+
         try {
             String userId = (String) httpRequest.getAttribute("userId");
             if (userId == null) {
@@ -302,16 +302,13 @@ public class TagController {
                 response.put("message", "Người dùng chưa được xác thực");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
             }
-            
-            long totalTags = tagService.countTagsByUser(userId);
-            
-            Map<String, Object> stats = new HashMap<>();
-            stats.put("totalTags", totalTags);
-            
+
+            Map<String, Object> detailedStats = tagService.getDetailedTagStats(userId);
+
             response.put("success", true);
-            response.put("data", stats);
+            response.put("data", detailedStats);
             return ResponseEntity.ok(response);
-            
+
         } catch (Exception e) {
             response.put("success", false);
             response.put("message", "Lỗi khi lấy thống kê tags: " + e.getMessage());

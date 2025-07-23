@@ -205,7 +205,7 @@ const TaskList = ({ tasks, loading, error, showActions = false, onTaskUpdate = n
   }
   return (
     <div>      {/* Global expand/collapse controls */}
-      {tasks.some(task => task.subTasks && task.subTasks.length > 0) && (
+      {/* {tasks.some(task => task.subTasks && task.subTasks.length > 0) && (
         <div className="d-flex justify-content-between align-items-center px-3 py-2 task-expand-controls">
           <small className="text-primary fw-semibold">
             <i className="bi bi-list-task me-1"></i>
@@ -239,7 +239,7 @@ const TaskList = ({ tasks, loading, error, showActions = false, onTaskUpdate = n
             </button>
           </div>
         </div>
-      )}
+      )} */}
       
       <div className="list-group list-group-flush">{tasks.map((task) => (
         <div key={task.id} className="list-group-item border-0 py-3 px-3">
