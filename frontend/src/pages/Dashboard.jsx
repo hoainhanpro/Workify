@@ -3,8 +3,6 @@ import { Link } from 'react-router-dom'
 import { useAuthContext } from '../context/AuthContext'
 import { useTasks } from '../hooks/useTasks'
 import TaskList from '../components/TaskList'
-import TaskDashboard from '../components/TaskDashboard'
-import DebugInfo from '../components/DebugInfo'
 import CreateTaskModal from '../components/CreateTaskModal'
 import EditTaskModal from '../components/EditTaskModal'
 import ConfirmDeleteModal from '../components/ConfirmDeleteModal'
@@ -239,82 +237,6 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
-
-      {/* Task Dashboard with Calendar & Analytics */}
-      <div className="row mt-4">
-        <div className="col-12">
-          <TaskDashboard />
-        </div>
-      </div>
-
-      <div className="row g-4 mt-2">
-        {/* Recent Tasks */}
-        <div className="col-lg-8">
-          <div className="card border-0 shadow-sm">
-            <div className="card-header bg-transparent border-0 pt-4 px-4">
-              <h5 className="mb-0">Nhiệm vụ gần đây</h5>
-            </div>
-            <div className="card-body">
-              <TaskList 
-                tasks={recentTasks} 
-                loading={loading} 
-                error={error}
-                showActions={true}
-                onTaskUpdate={updateTask}
-                onTaskEdit={handleEditTask}
-                onTaskDelete={handleDeleteClick}
-              />
-              <div className="text-center mt-3">
-                <Link to="/workify/tasks" className="btn btn-outline-primary">
-                  <i className="bi bi-list-ul me-2"></i>
-                  Xem tất cả nhiệm vụ
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="col-lg-4">
-          <div className="card border-0 shadow-sm">
-            <div className="card-header bg-transparent border-0 pt-4 px-4">
-              <h5 className="mb-0">Hành động nhanh</h5>
-            </div>
-            <div className="card-body">
-              <div className="d-grid gap-2">
-                <button 
-                  className="btn btn-primary"
-                  onClick={() => setShowCreateModal(true)}
-                >
-                  <i className="bi bi-plus-circle me-2"></i>
-                  Tạo nhiệm vụ mới
-                </button>
-                <Link to="/workify/notes" className="btn btn-outline-primary">
-                  <i className="bi bi-journal-plus me-2"></i>
-                  Thêm ghi chú
-                </Link>
-                <button className="btn btn-outline-primary">
-                  <i className="bi bi-calendar-plus me-2"></i>
-                  Lên lịch họp
-                </button>
-                <button className="btn btn-outline-primary">
-                  <i className="bi bi-share me-2"></i>
-                  Chia sẻ dự án
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Debug Information - Remove in production */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="row mt-4">
-          <div className="col-12">
-            <DebugInfo />
-          </div>
-        </div>
-      )}
 
       {/* Create Task Modal */}
       <CreateTaskModal

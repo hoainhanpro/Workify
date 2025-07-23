@@ -476,48 +476,6 @@ const taskService = {
     }
   },
 
-  // Get tasks due today
-  getTasksDueToday: async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/tasks/due-today`, {
-        method: 'GET',
-        headers: {
-          'Authorization': getAuthToken(),
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Error getting tasks due today:', error);
-      throw error;
-    }
-  },
-
-  // Get overdue tasks
-  getOverdueTasks: async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/tasks/overdue`, {
-        method: 'GET',
-        headers: {
-          'Authorization': getAuthToken(),
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Error getting overdue tasks:', error);
-      throw error;
-    }
-  },
-
   // Share task to workspace
   shareTaskToWorkspace: async (taskId, workspaceId, permissions) => {
     try {

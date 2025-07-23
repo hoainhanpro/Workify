@@ -17,18 +17,44 @@ const TaskDashboard = () => {
   const loadDashboardData = async () => {
     try {
       setLoading(true);
+      setError(''); // Clear previous errors
+      
       const [analyticsRes, dueTodayRes, overdueRes] = await Promise.all([
-        taskService.getTaskAnalytics(),
-        taskService.getTasksDueToday(),
-        taskService.getOverdueTasks(),
+        taskService.getTaskAnalytics().catch(err => {
+          console.warn('Analytics failed:', err);
+          return { success: false, error: err.message };
+        }),
+        taskService.getTasksDueToday().catch(err => {
+          console.warn('Due today tasks failed:', err);
+          return { success: false, error: err.message };
+        }),
+        taskService.getOverdueTasks().catch(err => {
+          console.warn('Overdue tasks failed:', err);
+          return { success: false, error: err.message };
+        }),
       ]);
 
-      if (analyticsRes.success) setAnalytics(analyticsRes.data);
-      if (dueTodayRes.success) setDueTodayTasks(dueTodayRes.data);
-      if (overdueRes.success) setOverdueTasks(overdueRes.data);
+      // Set data if successful, otherwise use defaults
+      if (analyticsRes.success) {
+        setAnalytics(analyticsRes.data);
+      } else {
+        // Set default analytics data
+        setAnalytics({
+          totalTasks: 0,
+          completedTasks: 0,
+          inProgressTasks: 0,
+          todoTasks: 0,
+          overdueTasks: 0,
+          calendarSyncedTasks: 0
+        });
+      }
+      
+      if (dueTodayRes.success) setDueTodayTasks(dueTodayRes.data || []);
+      if (overdueRes.success) setOverdueTasks(overdueRes.data || []);
+      
     } catch (err) {
-      setError('Không thể tải dữ liệu dashboard');
       console.error('Dashboard loading error:', err);
+      setError('Một số dữ liệu không thể tải được. Vui lòng thử lại sau.');
     } finally {
       setLoading(false);
     }
@@ -87,17 +113,15 @@ const TaskDashboard = () => {
     );
   }
 
-  if (error) {
-    return (
-      <div className="alert alert-danger">
-        <i className="bi bi-exclamation-triangle me-2"></i>
-        {error}
-      </div>
-    );
-  }
-
   return (
     <div className="task-dashboard">
+      {error && (
+        <div className="alert alert-warning alert-dismissible fade show" role="alert">
+          <i className="bi bi-exclamation-triangle me-2"></i>
+          {error}
+          <button type="button" className="btn-close" onClick={() => setError('')}></button>
+        </div>
+      )}
       <div className="row">
         {/* Analytics Cards */}
         {analytics && (
