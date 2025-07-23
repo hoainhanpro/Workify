@@ -8,6 +8,7 @@ import com.workify.backend.model.WorkspaceRole;
 import com.workify.backend.security.SecurityUtils;
 import com.workify.backend.service.UserService;
 import com.workify.backend.service.WorkspaceService;
+import com.workify.backend.service.WorkspaceInvitationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -35,6 +36,9 @@ public class WorkspaceInvitationController {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private WorkspaceInvitationService invitationService;
 
     /**
      * Gửi lời mời tham gia workspace
@@ -121,7 +125,9 @@ public class WorkspaceInvitationController {
         try {
             String actualUserId = getCurrentActualUserId();
 
-            List<WorkspaceInvitation> invitations = workspaceService.getUserInvitations(actualUserId);
+            // Sử dụng invitationService để lấy pending invitations (bao gồm cả
+            // email/username)
+            List<WorkspaceInvitation> invitations = invitationService.getPendingInvitationsForUser(actualUserId);
             List<InvitationResponse> invitationResponses = invitations.stream()
                     .map(InvitationResponse::new)
                     .collect(Collectors.toList());

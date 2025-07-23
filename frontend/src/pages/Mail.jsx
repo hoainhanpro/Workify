@@ -15,16 +15,16 @@ const Mail = () => {
 
   // Dynamic mail categories with real counts
   const getMailCategories = () => {
-    // Ưu tiên sử dụng API data, fallback về mockdata
-    const invitationCount = workspaceInvitations.length > 0 
-      ? workspaceInvitations.length 
-      : mockMails.filter(mail => mail.category === 'invitations').length;
+    // Chỉ đếm những invitation có status PENDING
+    const pendingInvitationCount = workspaceInvitations.filter(invitation => 
+      invitation.status === 'PENDING'
+    ).length;
     
     return [
       { id: 'inbox', name: 'Hộp thư đến', icon: 'bi-inbox', count: 15 },
       { id: 'starred', name: 'Đã đánh dấu sao', icon: 'bi-star', count: 3 },
       { id: 'sent', name: 'Đã gửi', icon: 'bi-send', count: 8 },
-      { id: 'invitations', name: 'Lời mời workspace', icon: 'bi-people-fill', count: invitationCount }
+      { id: 'invitations', name: 'Lời mời workspace', icon: 'bi-people-fill', count: pendingInvitationCount }
     ]
   }
 
@@ -405,6 +405,8 @@ const Mail = () => {
       await workspaceInvitationService.acceptInvitation(invitationId)
       // Reload invitations after accepting
       await loadWorkspaceInvitations()
+      // Clear selected mail to refresh view
+      setSelectedMail(null)
       // Show success message
       alert('Đã chấp nhận lời mời workspace thành công!')
     } catch (error) {
@@ -418,6 +420,8 @@ const Mail = () => {
       await workspaceInvitationService.declineInvitation(invitationId)
       // Reload invitations after declining
       await loadWorkspaceInvitations()
+      // Clear selected mail to refresh view
+      setSelectedMail(null)
       // Show success message
       alert('Đã từ chối lời mời workspace.')
     } catch (error) {
@@ -429,7 +433,7 @@ const Mail = () => {
   // Combine regular emails with workspace invitations
   const getAllMails = () => {
     if (selectedCategory === 'invitations') {
-      // Nếu có API data thì sử dụng, nếu không thì fallback về mockdata
+      // Chỉ hiển thị workspace invitations từ API, không fallback về mockdata
       if (workspaceInvitations && workspaceInvitations.length > 0) {
         // Convert workspace invitations to mail format
         const invitationMails = workspaceInvitations.map((invitation, index) => {
@@ -442,15 +446,28 @@ const Mail = () => {
             inviterName: invitation?.inviterName || 'Unknown User',
             inviterEmail: invitation?.inviterEmail || 'unknown@email.com',
             createdAt: invitation?.createdAt || new Date().toISOString(),
+            status: invitation?.status || 'PENDING',
             ...invitation
           }
+          
+          // Chỉ hiển thị action buttons nếu status là PENDING
+          const actionButtons = safeInvitation.status === 'PENDING' ? `
+            <div class="invitation-actions mt-3">
+              <button class="btn btn-success me-2" onclick="handleAcceptInvitation('${safeInvitation.id}')">✅ Chấp nhận</button>
+              <button class="btn btn-outline-danger" onclick="handleDeclineInvitation('${safeInvitation.id}')">❌ Từ chối</button>
+            </div>
+          ` : `
+            <div class="invitation-status mt-3">
+              <span class="badge bg-secondary">Trạng thái: ${safeInvitation.status}</span>
+            </div>
+          `
           
           return {
             id: `invitation_${safeInvitation.id}`,
             sender: safeInvitation.inviterName,
             email: safeInvitation.inviterEmail,
             subject: `Lời mời tham gia workspace: ${safeInvitation.workspaceName}`,
-            preview: `Bạn được mời tham gia workspace "${safeInvitation.workspaceName}" với vai trò ${safeInvitation.role}. Hãy chấp nhận để bắt đầu cộng tác!`,
+            preview: `Bạn được mời tham gia workspace "${safeInvitation.workspaceName}" với vai trò ${safeInvitation.role}. ${safeInvitation.status === 'PENDING' ? 'Hãy chấp nhận để bắt đầu cộng tác!' : `Trạng thái: ${safeInvitation.status}`}`,
             content: `
               <div class="workspace-invitation-card">
                 <h5>🏢 Lời mời tham gia Workspace</h5>
@@ -459,14 +476,11 @@ const Mail = () => {
                 <p><strong>Vai trò:</strong> <span class="badge bg-primary">${safeInvitation.role}</span></p>
                 <p><strong>Người mời:</strong> ${safeInvitation.inviterName}</p>
                 <p><strong>Email người mời:</strong> ${safeInvitation.inviterEmail}</p>
-                <div class="invitation-actions mt-3">
-                  <button class="btn btn-success me-2" onclick="handleAcceptInvitation('${safeInvitation.id}')">✅ Chấp nhận</button>
-                  <button class="btn btn-outline-danger" onclick="handleDeclineInvitation('${safeInvitation.id}')">❌ Từ chối</button>
-                </div>
+                ${actionButtons}
               </div>
             `,
             time: new Date(safeInvitation.createdAt).toLocaleDateString('vi-VN'),
-            isRead: false,
+            isRead: safeInvitation.status !== 'PENDING', // Đánh dấu đã đọc nếu không còn pending
             isStarred: false,
             hasAttachment: false,
             priority: 'normal',
@@ -477,8 +491,8 @@ const Mail = () => {
         })
         return invitationMails
       } else {
-        // Fallback về mockdata nếu không có API data
-        return mockMails.filter(mail => mail.category === 'invitations')
+        // Không có invitation nào, trả về mảng rỗng (không hiển thị mockdata)
+        return []
       }
     }
     
@@ -657,8 +671,18 @@ const Mail = () => {
                   </div>
                 ) : filteredMails.length === 0 ? (
                   <div className="text-center py-5">
-                    <i className="bi bi-inbox fs-1 text-muted"></i>
-                    <p className="text-muted mt-3">Không có email nào</p>
+                    <i className={`bi ${selectedCategory === 'invitations' ? 'bi-people-fill' : 'bi-inbox'} fs-1 text-muted`}></i>
+                    <p className="text-muted mt-3">
+                      {selectedCategory === 'invitations' 
+                        ? 'Không có lời mời workspace nào'
+                        : 'Không có email nào'
+                      }
+                    </p>
+                    {selectedCategory === 'invitations' && (
+                      <small className="text-muted">
+                        Khi có lời mời tham gia workspace mới, chúng sẽ xuất hiện ở đây.
+                      </small>
+                    )}
                   </div>
                 ) : (
                   filteredMails.map(mail => (
@@ -776,41 +800,52 @@ const Mail = () => {
               <div className="mail-detail-content">
                 {selectedMail.invitationType === 'workspace' ? (
                   <div className="workspace-invitation-content">
-                    <div dangerouslySetInnerHTML={{ __html: selectedMail.content.replace(
-                      '<button class="btn btn-success me-2">✅ Chấp nhận</button>',
-                      `<button class="btn btn-success me-2" onclick="handleAcceptInvitation(${selectedMail.id})">✅ Chấp nhận</button>`
-                    ).replace(
-                      '<button class="btn btn-outline-danger">❌ Từ chối</button>',
-                      `<button class="btn btn-outline-danger" onclick="handleDeclineInvitation(${selectedMail.id})">❌ Từ chối</button>`
-                    ) }} />
+                    <div dangerouslySetInnerHTML={{ __html: selectedMail.content }} />
                     
-                    {/* Interactive buttons that work with React */}
-                    <div className="workspace-invitation-actions mt-4 p-3 bg-light rounded">
-                      <h6>Thao tác:</h6>
-                      <div className="d-flex gap-2">
-                        <button 
-                          className="btn btn-success"
-                          onClick={() => handleAcceptInvitation(selectedMail.invitationData?.id || selectedMail.id)}
-                        >
-                          <i className="bi bi-check-lg me-2"></i>
-                          Chấp nhận lời mời
-                        </button>
-                        <button 
-                          className="btn btn-outline-danger"
-                          onClick={() => handleDeclineInvitation(selectedMail.invitationData?.id || selectedMail.id)}
-                        >
-                          <i className="bi bi-x-lg me-2"></i>
-                          Từ chối
-                        </button>
-                        <button 
-                          className="btn btn-outline-secondary"
-                          onClick={() => alert('Tính năng xem thông tin workspace chi tiết sẽ được phát triển sau!')}
-                        >
-                          <i className="bi bi-info-circle me-2"></i>
-                          Xem chi tiết
-                        </button>
+                    {/* Interactive buttons that work with React - chỉ hiện khi status = PENDING */}
+                    {selectedMail.invitationData?.status === 'PENDING' ? (
+                      <div className="workspace-invitation-actions mt-4 p-3 bg-light rounded">
+                        <h6>Thao tác:</h6>
+                        <div className="d-flex gap-2">
+                          <button 
+                            className="btn btn-success"
+                            onClick={() => handleAcceptInvitation(selectedMail.invitationData?.id || selectedMail.id)}
+                          >
+                            <i className="bi bi-check-lg me-2"></i>
+                            Chấp nhận lời mời
+                          </button>
+                          <button 
+                            className="btn btn-outline-danger"
+                            onClick={() => handleDeclineInvitation(selectedMail.invitationData?.id || selectedMail.id)}
+                          >
+                            <i className="bi bi-x-lg me-2"></i>
+                            Từ chối
+                          </button>
+                          <button 
+                            className="btn btn-outline-secondary"
+                            onClick={() => alert('Tính năng xem thông tin workspace chi tiết sẽ được phát triển sau!')}
+                          >
+                            <i className="bi bi-info-circle me-2"></i>
+                            Xem chi tiết
+                          </button>
+                        </div>
                       </div>
-                    </div>
+                    ) : (
+                      <div className="workspace-invitation-status mt-4 p-3 bg-secondary rounded">
+                        <h6 className="text-white">Trạng thái lời mời:</h6>
+                        <span className={`badge ${
+                          selectedMail.invitationData?.status === 'ACCEPTED' ? 'bg-success' :
+                          selectedMail.invitationData?.status === 'DECLINED' ? 'bg-danger' :
+                          'bg-warning'
+                        } fs-6`}>
+                          {selectedMail.invitationData?.status === 'ACCEPTED' ? '✅ Đã chấp nhận' :
+                           selectedMail.invitationData?.status === 'DECLINED' ? '❌ Đã từ chối' :
+                           selectedMail.invitationData?.status === 'EXPIRED' ? '⏰ Đã hết hạn' :
+                           `📋 ${selectedMail.invitationData?.status}`
+                          }
+                        </span>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div dangerouslySetInnerHTML={{ __html: selectedMail.content }} />
