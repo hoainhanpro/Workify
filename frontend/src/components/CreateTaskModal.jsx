@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react'
-import TagSelector from './TagSelector' // Import TagSelector component
+import TagSelector from './TagSelector'
+import workspaceService from '../services/workspaceService'
 
-const CreateTaskModal = ({ show, onHide, onTaskCreated, availableTags }) => {  const [formData, setFormData] = useState({
+const CreateTaskModal = ({ show, onHide, onTaskCreated, availableTags }) => {
+  const [formData, setFormData] = useState({
     title: '',
     description: '',
     priority: 'MEDIUM',
@@ -10,12 +12,22 @@ const CreateTaskModal = ({ show, onHide, onTaskCreated, availableTags }) => {  c
     dueDate: '',
     syncWithCalendar: false,
     subTasks: [],
+    // Workspace fields
+    workspaceId: '',
+    shareToWorkspace: false,
+    workspacePermissions: {
+      canEdit: false,
+      canDelete: false,
+      canShare: false
+    }
   });
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [tagInput, setTagInput] = useState('')
   const [subTaskInput, setSubTaskInput] = useState('')
   const [showSubTasks, setShowSubTasks] = useState(false)
+  const [workspaces, setWorkspaces] = useState([])
+  const [loadingWorkspaces, setLoadingWorkspaces] = useState(false)
 
   // Close modal on ESC key
   useEffect(() => {
@@ -28,6 +40,7 @@ const CreateTaskModal = ({ show, onHide, onTaskCreated, availableTags }) => {  c
     if (show) {
       document.addEventListener('keydown', handleEscKey)
       document.body.style.overflow = 'hidden'
+      loadWorkspaces()
     } else {
       document.body.style.overflow = 'unset'
     }
@@ -37,6 +50,19 @@ const CreateTaskModal = ({ show, onHide, onTaskCreated, availableTags }) => {  c
       document.body.style.overflow = 'unset'
     }
   }, [show, loading])
+
+  // Load workspaces when modal opens
+  const loadWorkspaces = async () => {
+    try {
+      setLoadingWorkspaces(true)
+      const data = await workspaceService.getAllWorkspaces()
+      setWorkspaces(data)
+    } catch (error) {
+      console.error('Error loading workspaces:', error)
+    } finally {
+      setLoadingWorkspaces(false)
+    }
+  }
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
@@ -95,6 +121,31 @@ const CreateTaskModal = ({ show, onHide, onTaskCreated, availableTags }) => {  c
       )
     }))
   }
+
+  const handleWorkspaceToggle = (e) => {
+    const { checked } = e.target
+    setFormData(prev => ({
+      ...prev,
+      shareToWorkspace: checked,
+      workspaceId: checked ? prev.workspaceId : '',
+      workspacePermissions: checked ? prev.workspacePermissions : {
+        canEdit: false,
+        canDelete: false,
+        canShare: false
+      }
+    }))
+  }
+
+  const handleWorkspacePermissionChange = (permission, checked) => {
+    setFormData(prev => ({
+      ...prev,
+      workspacePermissions: {
+        ...prev.workspacePermissions,
+        [permission]: checked
+      }
+    }))
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     setLoading(true)
@@ -169,6 +220,14 @@ const CreateTaskModal = ({ show, onHide, onTaskCreated, availableTags }) => {  c
         dueDate: '',
         syncWithCalendar: false,
         subTasks: [],
+        // Workspace fields
+        workspaceId: '',
+        shareToWorkspace: false,
+        workspacePermissions: {
+          canEdit: false,
+          canDelete: false,
+          canShare: false
+        }
       })
       setTagInput('')
       setSubTaskInput('')
@@ -340,11 +399,102 @@ const CreateTaskModal = ({ show, onHide, onTaskCreated, availableTags }) => {  c
 
               {/* Tags */}
               <div className="mb-3">
-                <label className="form-label">Thẻ tag</label>                <TagSelector
+                <label className="form-label">Thẻ tag</label>
+                <TagSelector
                   selectedTagIds={formData.tags}
                   onTagsChange={(newTagIds) => setFormData(prev => ({ ...prev, tags: newTagIds }))}
                   availableTags={availableTags}
                 />
+              </div>
+
+              {/* Workspace Sharing */}
+              <div className="mb-3">
+                <div className="form-check">
+                  <input
+                    className="form-check-input"
+                    type="checkbox"
+                    id="shareToWorkspace"
+                    checked={formData.shareToWorkspace}
+                    onChange={handleWorkspaceToggle}
+                    disabled={loading}
+                  />
+                  <label className="form-check-label" htmlFor="shareToWorkspace">
+                    <i className="bi bi-building me-1"></i>
+                    Chia sẻ với Workspace
+                  </label>
+                </div>
+
+                {formData.shareToWorkspace && (
+                  <div className="mt-3">
+                    <div className="mb-3">
+                      <label className="form-label">Chọn Workspace</label>
+                      <select
+                        className="form-control"
+                        name="workspaceId"
+                        value={formData.workspaceId}
+                        onChange={handleInputChange}
+                        disabled={loading || loadingWorkspaces}
+                        required={formData.shareToWorkspace}
+                      >
+                        <option value="">-- Chọn workspace --</option>
+                        {workspaces.map(workspace => (
+                          <option key={workspace.id} value={workspace.id}>
+                            {workspace.name} ({workspace.userRole})
+                          </option>
+                        ))}
+                      </select>
+                      {loadingWorkspaces && (
+                        <small className="text-muted">
+                          <i className="spinner-border spinner-border-sm me-1"></i>
+                          Đang tải workspaces...
+                        </small>
+                      )}
+                    </div>
+
+                    <div className="mb-3">
+                      <label className="form-label">Quyền trong Workspace</label>
+                      <div className="form-check">
+                        <input
+                          className="form-check-input"
+                          type="checkbox"
+                          id="canEdit"
+                          checked={formData.workspacePermissions.canEdit}
+                          onChange={(e) => handleWorkspacePermissionChange('canEdit', e.target.checked)}
+                          disabled={loading}
+                        />
+                        <label className="form-check-label" htmlFor="canEdit">
+                          Cho phép chỉnh sửa
+                        </label>
+                      </div>
+                      <div className="form-check">
+                        <input
+                          className="form-check-input"
+                          type="checkbox"
+                          id="canDelete"
+                          checked={formData.workspacePermissions.canDelete}
+                          onChange={(e) => handleWorkspacePermissionChange('canDelete', e.target.checked)}
+                          disabled={loading}
+                        />
+                        <label className="form-check-label" htmlFor="canDelete">
+                          Cho phép xóa
+                        </label>
+                      </div>
+                      <div className="form-check">
+                        <input
+                          className="form-check-input"
+                          type="checkbox"
+                          id="canShare"
+                          checked={formData.workspacePermissions.canShare}
+                          onChange={(e) => handleWorkspacePermissionChange('canShare', e.target.checked)}
+                          disabled={loading}
+                        />
+                        <label className="form-check-label" htmlFor="canShare">
+                          Cho phép chia sẻ tiếp
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Subtasks */}

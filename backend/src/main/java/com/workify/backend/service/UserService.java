@@ -78,16 +78,31 @@ public class UserService {
                 .map(UserResponse::new);
     }
 
+    // Get user entity by ID (for internal service use)
+    public Optional<User> findById(String id) {
+        return userRepository.findById(id);
+    }
+
     // Get user by username
     public Optional<UserResponse> getUserByUsername(String username) {
         return userRepository.findByUsername(username)
                 .map(UserResponse::new);
     }
 
+    // Get user entity by username (for internal service use)
+    public Optional<User> findByUsername(String username) {
+        return userRepository.findByUsername(username);
+    }
+
     // Get user by email
     public Optional<UserResponse> getUserByEmail(String email) {
         return userRepository.findByEmail(email)
                 .map(UserResponse::new);
+    }
+
+    // Get user entity by email (for internal service use)
+    public Optional<User> findByEmail(String email) {
+        return userRepository.findByEmail(email);
     }
 
     // Get all users
@@ -144,6 +159,11 @@ public class UserService {
         return userRepository.existsByUsername(username) || userRepository.existsByEmail(email);
     }
 
+    // Check if user exists by ID
+    public boolean existsById(String id) {
+        return userRepository.existsById(id);
+    }
+
     // Get user statistics
     public UserStats getUserStats() {
         long totalUsers = userRepository.count();
@@ -172,10 +192,24 @@ public class UserService {
         }
 
         // Getters
-        public long getTotalUsers() { return totalUsers; }
-        public long getEnabledUsers() { return enabledUsers; }
-        public long getDisabledUsers() { return disabledUsers; }
-        public long getAdminUsers() { return adminUsers; }
-        public long getRegularUsers() { return regularUsers; }
+        public long getTotalUsers() {
+            return totalUsers;
+        }
+
+        public long getEnabledUsers() {
+            return enabledUsers;
+        }
+
+        public long getDisabledUsers() {
+            return disabledUsers;
+        }
+
+        public long getAdminUsers() {
+            return adminUsers;
+        }
+
+        public long getRegularUsers() {
+            return regularUsers;
+        }
     }
 }

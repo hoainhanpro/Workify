@@ -536,6 +536,88 @@ const noteService = {
       console.error('Error restoring note to version:', error)
       throw error
     }
+  },
+
+  // Share note to workspace
+  shareNoteToWorkspace: async (noteId, workspaceId, permissions) => {
+    try {
+      const token = localStorage.getItem('workify_access_token')
+      
+      const response = await fetch(`${API_CONFIG.baseUrl}/notes/${noteId}/share-to-workspace`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          workspaceId,
+          permissions
+        })
+      })
+
+      const data = await response.json()
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'Lỗi khi chia sẻ note với workspace')
+      }
+
+      return data
+    } catch (error) {
+      console.error('Error sharing note to workspace:', error)
+      throw error
+    }
+  },
+
+  // Unshare note from workspace
+  unshareNoteFromWorkspace: async (noteId) => {
+    try {
+      const token = localStorage.getItem('workify_access_token')
+      
+      const response = await fetch(`${API_CONFIG.baseUrl}/notes/${noteId}/unshare-from-workspace`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      const data = await response.json()
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'Lỗi khi hủy chia sẻ note')
+      }
+
+      return data
+    } catch (error) {
+      console.error('Error unsharing note from workspace:', error)
+      throw error
+    }
+  },
+
+  // Add edit permission for note
+  addNoteEditPermission: async (noteId, targetUserId) => {
+    try {
+      const token = localStorage.getItem('workify_access_token')
+      
+      const response = await fetch(`${API_CONFIG.baseUrl}/notes/${noteId}/add-edit-permission`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ targetUserId })
+      })
+
+      const data = await response.json()
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'Lỗi khi thêm quyền chỉnh sửa')
+      }
+
+      return data
+    } catch (error) {
+      console.error('Error adding edit permission:', error)
+      throw error
+    }
   }
 }
 

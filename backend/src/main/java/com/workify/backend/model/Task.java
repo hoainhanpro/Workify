@@ -198,6 +198,12 @@ public class Task {
     private String googleCalendarEventId;
     private Boolean syncWithCalendar = false;
 
+    // Workspace integration fields
+    private String workspaceId; // null = personal task
+    private String assignedToUserId; // null = unassigned, assignee trong workspace
+    private Boolean isSharedToWorkspace = false; // task có được chia sẻ lên workspace không
+    private SharedPermissions sharedPermissions; // quyền truy cập chi tiết
+
     @CreatedDate
     private LocalDateTime createdAt;
 
@@ -461,5 +467,139 @@ public class Task {
      */
     public boolean hasCalendarIntegration() {
         return this.googleCalendarEventId != null && !this.googleCalendarEventId.isEmpty();
+    }
+
+    // ============= WORKSPACE FIELDS GETTERS AND SETTERS =============
+
+    public String getWorkspaceId() {
+        return workspaceId;
+    }
+
+    public void setWorkspaceId(String workspaceId) {
+        this.workspaceId = workspaceId;
+    }
+
+    public String getAssignedToUserId() {
+        return assignedToUserId;
+    }
+
+    public void setAssignedToUserId(String assignedToUserId) {
+        this.assignedToUserId = assignedToUserId;
+    }
+
+    public Boolean getIsSharedToWorkspace() {
+        return isSharedToWorkspace;
+    }
+
+    public void setIsSharedToWorkspace(Boolean isSharedToWorkspace) {
+        this.isSharedToWorkspace = isSharedToWorkspace != null ? isSharedToWorkspace : false;
+    }
+
+    public SharedPermissions getSharedPermissions() {
+        return sharedPermissions;
+    }
+
+    public void setSharedPermissions(SharedPermissions sharedPermissions) {
+        this.sharedPermissions = sharedPermissions;
+    }
+
+    // ============= WORKSPACE HELPER METHODS =============
+
+    /**
+     * Kiểm tra task có phải là personal task không
+     */
+    public boolean isPersonalTask() {
+        return workspaceId == null || workspaceId.isEmpty();
+    }
+
+    /**
+     * Kiểm tra task có được chia sẻ lên workspace không
+     */
+    public boolean isSharedTask() {
+        return isSharedToWorkspace != null && isSharedToWorkspace && workspaceId != null;
+    }
+
+    /**
+     * Kiểm tra task có được assign cho ai không
+     */
+    public boolean isAssigned() {
+        return assignedToUserId != null && !assignedToUserId.isEmpty();
+    }
+
+    /**
+     * Kiểm tra user có quyền view task này không
+     */
+    public boolean canUserView(String userId) {
+        // Owner của task luôn có quyền view
+        if (this.userId.equals(userId)) {
+            return true;
+        }
+
+        // Nếu là personal task, chỉ owner mới view được
+        if (isPersonalTask()) {
+            return false;
+        }
+
+        // Nếu là assigned task, assignee có thể view
+        if (isAssigned() && assignedToUserId.equals(userId)) {
+            return true;
+        }
+
+        // Kiểm tra shared permissions
+        if (sharedPermissions != null) {
+            return sharedPermissions.canUserView(userId);
+        }
+
+        return false;
+    }
+
+    /**
+     * Kiểm tra user có quyền edit task này không
+     */
+    public boolean canUserEdit(String userId) {
+        // Owner của task luôn có quyền edit
+        if (this.userId.equals(userId)) {
+            return true;
+        }
+
+        // Nếu là personal task, chỉ owner mới edit được
+        if (isPersonalTask()) {
+            return false;
+        }
+
+        // Nếu là assigned task, assignee có thể edit
+        if (isAssigned() && assignedToUserId.equals(userId)) {
+            return true;
+        }
+
+        // Kiểm tra shared permissions
+        if (sharedPermissions != null) {
+            return sharedPermissions.canUserEdit(userId);
+        }
+
+        return false;
+    }
+
+    /**
+     * Share task to workspace với permissions mặc định
+     */
+    public void shareToWorkspace(String workspaceId) {
+        this.workspaceId = workspaceId;
+        this.isSharedToWorkspace = true;
+        if (this.sharedPermissions == null) {
+            this.sharedPermissions = new SharedPermissions();
+        }
+    }
+
+    /**
+     * Assign task cho user trong workspace
+     */
+    public void assignToUser(String userId) {
+        this.assignedToUserId = userId;
+        // Tự động cấp quyền edit cho assignee
+        if (this.sharedPermissions == null) {
+            this.sharedPermissions = new SharedPermissions();
+        }
+        this.sharedPermissions.addEditPermission(userId);
     }
 }

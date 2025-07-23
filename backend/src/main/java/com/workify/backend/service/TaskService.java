@@ -19,6 +19,9 @@ public class TaskService {
     private TaskRepository taskRepository;
 
     @Autowired
+    private WorkspaceService workspaceService;
+
+    @Autowired
     private GoogleCalendarService googleCalendarService;
 
     // Get all tasks for a user
@@ -677,5 +680,182 @@ public class TaskService {
             task.setStatus(Task.TaskStatus.TODO);
             task.setCompletedAt(null); // Clear completion timestamp
         }
+    }
+
+    // ============= WORKSPACE RELATED METHODS =============
+
+    /**
+     * Lấy personal tasks của user (không thuộc workspace)
+     */
+    public List<Task> getPersonalTasksByUserId(String userId) {
+        return taskRepository.findPersonalTasksByUserId(userId);
+    }
+
+    /**
+     * Lấy tất cả tasks trong workspace mà user có thể view
+     */
+    public List<Task> getWorkspaceTasksForUser(String workspaceId, String userId) {
+        return taskRepository.findWorkspaceTasksVisibleToUser(workspaceId, userId);
+    }
+
+    /**
+     * Lấy tasks được assign cho user trong workspace
+     */
+    public List<Task> getAssignedTasksInWorkspace(String workspaceId, String userId) {
+        return taskRepository.findByWorkspaceIdAndAssignedToUserId(workspaceId, userId);
+    }
+
+    /**
+     * Lấy tasks mà user tạo trong workspace
+     */
+    public List<Task> getCreatedTasksInWorkspace(String workspaceId, String userId) {
+        return taskRepository.findByWorkspaceIdAndUserId(workspaceId, userId);
+    }
+
+    /**
+     * Share task to workspace
+     */
+    public Task shareTaskToWorkspace(String taskId, String workspaceId, String userId) {
+        Optional<Task> taskOpt = taskRepository.findByIdAndUserId(taskId, userId);
+        if (taskOpt.isEmpty()) {
+            throw new IllegalArgumentException("Task not found or you don't have permission");
+        }
+
+        Task task = taskOpt.get();
+        task.shareToWorkspace(workspaceId);
+        return taskRepository.save(task);
+    }
+
+    /**
+     * Assign task to user trong workspace
+     */
+    public Task assignTaskToUser(String taskId, String assigneeUserId, String requestUserId) {
+        Optional<Task> taskOpt = taskRepository.findByIdAndUserHasAccess(taskId, requestUserId);
+        if (taskOpt.isEmpty()) {
+            throw new IllegalArgumentException("Task not found or you don't have permission");
+        }
+
+        Task task = taskOpt.get();
+
+        // Chỉ owner hoặc người có edit permission mới assign được
+        if (!task.canUserEdit(requestUserId)) {
+            throw new SecurityException("You don't have permission to assign this task");
+        }
+
+        task.assignToUser(assigneeUserId);
+        return taskRepository.save(task);
+    }
+
+    /**
+     * Tạo task trong workspace
+     */
+    public Task createWorkspaceTask(String title, String description, String workspaceId,
+            String userId, Task.TaskPriority priority) {
+        Task task = new Task(title, description, userId);
+        task.setPriority(priority);
+        task.setWorkspaceId(workspaceId);
+        task.setIsSharedToWorkspace(true);
+
+        return taskRepository.save(task);
+    }
+
+    /**
+     * Lấy task theo ID với workspace access check
+     */
+    public Optional<Task> getWorkspaceTaskById(String taskId, String userId) {
+        return taskRepository.findByIdAndUserHasAccess(taskId, userId);
+    }
+
+    /**
+     * Update task trong workspace (với permission check)
+     */
+    public Task updateWorkspaceTask(String taskId, String title, String description,
+            Task.TaskStatus status, Task.TaskPriority priority, String userId) {
+        Optional<Task> taskOpt = taskRepository.findByIdAndUserHasAccess(taskId, userId);
+        if (taskOpt.isEmpty()) {
+            throw new IllegalArgumentException("Task not found or you don't have access");
+        }
+
+        Task task = taskOpt.get();
+
+        // Kiểm tra quyền edit
+        if (!task.canUserEdit(userId)) {
+            throw new SecurityException("You don't have permission to edit this task");
+        }
+
+        if (title != null)
+            task.setTitle(title);
+        if (description != null)
+            task.setDescription(description);
+        if (status != null)
+            task.setStatus(status);
+        if (priority != null)
+            task.setPriority(priority);
+
+        return taskRepository.save(task);
+    }
+
+    /**
+     * Delete task trong workspace (với permission check)
+     */
+    public void deleteWorkspaceTask(String taskId, String userId) {
+        Optional<Task> taskOpt = taskRepository.findByIdAndUserHasAccess(taskId, userId);
+        if (taskOpt.isEmpty()) {
+            throw new IllegalArgumentException("Task not found or you don't have access");
+        }
+
+        Task task = taskOpt.get();
+
+        // Chỉ owner của task mới delete được
+        if (!task.getUserId().equals(userId)) {
+            throw new SecurityException("Only task owner can delete task");
+        }
+
+        taskRepository.deleteById(taskId);
+    }
+
+    /**
+     * Đếm tasks trong workspace
+     */
+    public long countWorkspaceTasks(String workspaceId) {
+        return taskRepository.countByWorkspaceId(workspaceId);
+    }
+
+    /**
+     * Đếm assigned tasks của user trong workspace
+     */
+    public long countAssignedTasksInWorkspace(String workspaceId, String userId) {
+        return taskRepository.countByWorkspaceIdAndAssignedToUserId(workspaceId, userId);
+    }
+
+    /**
+     * Unshare task khỏi workspace
+     */
+    public Task unshareTaskFromWorkspace(String taskId, String userId) {
+        Optional<Task> taskOpt = taskRepository.findById(taskId);
+        if (taskOpt.isEmpty()) {
+            throw new IllegalArgumentException("Task not found");
+        }
+
+        Task task = taskOpt.get();
+
+        // Kiểm tra quyền: chỉ owner của task hoặc admin workspace mới unshare được
+        if (!task.getUserId().equals(userId)) {
+            if (task.getWorkspaceId() != null) {
+                boolean hasWorkspaceAccess = workspaceService.hasAdminAccess(task.getWorkspaceId(), userId);
+                if (!hasWorkspaceAccess) {
+                    throw new SecurityException("Only task owner or workspace admin can unshare task");
+                }
+            } else {
+                throw new SecurityException("Only task owner can unshare task");
+            }
+        }
+
+        // Unshare task
+        task.setWorkspaceId(null);
+        task.setIsSharedToWorkspace(false);
+        task.setAssignedToUserId(null); // Clear assignment when unsharing
+
+        return taskRepository.save(task);
     }
 }

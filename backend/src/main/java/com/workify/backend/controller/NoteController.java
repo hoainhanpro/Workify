@@ -28,6 +28,7 @@ import com.workify.backend.dto.NoteUpdateRequest;
 import com.workify.backend.dto.TagResponse;
 import com.workify.backend.model.Attachment;
 import com.workify.backend.model.Note;
+import com.workify.backend.security.SecurityUtils;
 import com.workify.backend.service.FileStorageService;
 import com.workify.backend.service.NoteService;
 import com.workify.backend.service.TagService;
@@ -37,18 +38,18 @@ import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/notes")
-@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:5173"})
+@CrossOrigin(origins = { "http://localhost:3000", "http://localhost:5173" })
 public class NoteController {
-    
+
     @Autowired
     private NoteService noteService;
-    
+
     @Autowired
     private TagService tagService;
-    
+
     @Autowired
     private FileStorageService fileStorageService;
-    
+
     /**
      * Tạo note mới
      */
@@ -57,9 +58,9 @@ public class NoteController {
     public ResponseEntity<Map<String, Object>> createNote(
             @Valid @RequestBody NoteCreateRequest request,
             HttpServletRequest httpRequest) {
-        
+
         Map<String, Object> response = new HashMap<>();
-        
+
         try {
             String userId = (String) httpRequest.getAttribute("userId");
             if (userId == null) {
@@ -67,22 +68,22 @@ public class NoteController {
                 response.put("message", "Người dùng chưa được xác thực");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
             }
-            
+
             NoteResponse noteResponse = noteService.createNote(request, userId);
-            
+
             response.put("success", true);
             response.put("message", "Tạo ghi chú thành công");
             response.put("data", noteResponse);
-            
+
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
-            
+
         } catch (Exception e) {
             response.put("success", false);
             response.put("message", "Lỗi khi tạo ghi chú: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
-    
+
     /**
      * Lấy tất cả note của user hiện tại
      */
@@ -90,7 +91,7 @@ public class NoteController {
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     public ResponseEntity<Map<String, Object>> getAllNotes(HttpServletRequest httpRequest) {
         Map<String, Object> response = new HashMap<>();
-        
+
         try {
             String userId = (String) httpRequest.getAttribute("userId");
             if (userId == null) {
@@ -98,22 +99,22 @@ public class NoteController {
                 response.put("message", "Người dùng chưa được xác thực");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
             }
-            
+
             List<NoteResponse> notes = noteService.getAllNotesByUser(userId);
-            
+
             response.put("success", true);
             response.put("data", notes);
             response.put("count", notes.size());
-            
+
             return ResponseEntity.ok(response);
-            
+
         } catch (Exception e) {
             response.put("success", false);
             response.put("message", "Lỗi khi lấy danh sách ghi chú: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
-    
+
     /**
      * Lấy note theo ID
      */
@@ -122,9 +123,9 @@ public class NoteController {
     public ResponseEntity<Map<String, Object>> getNoteById(
             @PathVariable String id,
             HttpServletRequest httpRequest) {
-        
+
         Map<String, Object> response = new HashMap<>();
-        
+
         try {
             String userId = (String) httpRequest.getAttribute("userId");
             if (userId == null) {
@@ -132,9 +133,9 @@ public class NoteController {
                 response.put("message", "Người dùng chưa được xác thực");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
             }
-            
+
             Optional<NoteResponse> note = noteService.getNoteById(id, userId);
-            
+
             if (note.isPresent()) {
                 response.put("success", true);
                 response.put("data", note.get());
@@ -144,14 +145,14 @@ public class NoteController {
                 response.put("message", "Không tìm thấy ghi chú");
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
             }
-            
+
         } catch (Exception e) {
             response.put("success", false);
             response.put("message", "Lỗi khi lấy ghi chú: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
-    
+
     /**
      * Cập nhật note
      */
@@ -161,9 +162,9 @@ public class NoteController {
             @PathVariable String id,
             @Valid @RequestBody NoteUpdateRequest request,
             HttpServletRequest httpRequest) {
-        
+
         Map<String, Object> response = new HashMap<>();
-        
+
         try {
             String userId = (String) httpRequest.getAttribute("userId");
             if (userId == null) {
@@ -171,9 +172,9 @@ public class NoteController {
                 response.put("message", "Người dùng chưa được xác thực");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
             }
-            
+
             Optional<NoteResponse> updatedNote = noteService.updateNote(id, request, userId);
-            
+
             if (updatedNote.isPresent()) {
                 response.put("success", true);
                 response.put("message", "Cập nhật ghi chú thành công");
@@ -184,14 +185,14 @@ public class NoteController {
                 response.put("message", "Không tìm thấy ghi chú hoặc bạn không có quyền chỉnh sửa");
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
             }
-            
+
         } catch (Exception e) {
             response.put("success", false);
             response.put("message", "Lỗi khi cập nhật ghi chú: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
-    
+
     /**
      * Xóa note
      */
@@ -200,9 +201,9 @@ public class NoteController {
     public ResponseEntity<Map<String, Object>> deleteNote(
             @PathVariable String id,
             HttpServletRequest httpRequest) {
-        
+
         Map<String, Object> response = new HashMap<>();
-        
+
         try {
             String userId = (String) httpRequest.getAttribute("userId");
             if (userId == null) {
@@ -210,9 +211,9 @@ public class NoteController {
                 response.put("message", "Người dùng chưa được xác thực");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
             }
-            
+
             boolean deleted = noteService.deleteNote(id, userId);
-            
+
             if (deleted) {
                 response.put("success", true);
                 response.put("message", "Xóa ghi chú thành công");
@@ -222,16 +223,16 @@ public class NoteController {
                 response.put("message", "Không tìm thấy ghi chú hoặc bạn không có quyền xóa");
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
             }
-            
+
         } catch (Exception e) {
             response.put("success", false);
             response.put("message", "Lỗi khi xóa ghi chú: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
-    
+
     // ================ GĐ5: ENDPOINTS CHO PIN VÀ TAG ================
-    
+
     /**
      * GĐ5: Pin hoặc unpin note
      */
@@ -240,15 +241,15 @@ public class NoteController {
     public ResponseEntity<Map<String, Object>> togglePinNote(
             @PathVariable String id,
             HttpServletRequest httpRequest) {
-        
+
         Map<String, Object> response = new HashMap<>();
-        
+
         try {
             // Lấy user ID từ JWT token
             String userId = (String) httpRequest.getAttribute("userId");
-            
+
             Optional<NoteResponse> noteOpt = noteService.togglePinNote(id, userId);
-            
+
             if (noteOpt.isPresent()) {
                 response.put("success", true);
                 response.put("message", noteOpt.get().getIsPinned() ? "Đã ghim note" : "Đã bỏ ghim note");
@@ -259,14 +260,14 @@ public class NoteController {
                 response.put("message", "Không tìm thấy note hoặc bạn không có quyền truy cập");
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
             }
-            
+
         } catch (Exception e) {
             response.put("success", false);
             response.put("message", "Lỗi khi pin/unpin note: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
-    
+
     /**
      * GĐ5: Cập nhật tags cho note
      */
@@ -276,9 +277,9 @@ public class NoteController {
             @PathVariable String id,
             @RequestBody List<String> tagIds,
             HttpServletRequest httpRequest) {
-        
+
         Map<String, Object> response = new HashMap<>();
-        
+
         try {
             String userId = (String) httpRequest.getAttribute("userId");
             if (userId == null) {
@@ -286,9 +287,9 @@ public class NoteController {
                 response.put("message", "Người dùng chưa được xác thực");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
             }
-            
+
             Optional<NoteResponse> noteOpt = noteService.updateNoteTags(id, tagIds, userId);
-            
+
             if (noteOpt.isPresent()) {
                 response.put("success", true);
                 response.put("message", "Cập nhật tags thành công");
@@ -299,7 +300,7 @@ public class NoteController {
                 response.put("message", "Không tìm thấy ghi chú hoặc bạn không có quyền chỉnh sửa");
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
             }
-            
+
         } catch (IllegalArgumentException e) {
             response.put("success", false);
             response.put("message", e.getMessage());
@@ -310,7 +311,7 @@ public class NoteController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
-    
+
     /**
      * GĐ5: Lấy danh sách notes đã pin của user
      */
@@ -318,31 +319,31 @@ public class NoteController {
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     public ResponseEntity<Map<String, Object>> getPinnedNotes(
             HttpServletRequest httpRequest) {
-        
+
         Map<String, Object> response = new HashMap<>();
-        
+
         try {
             // Lấy user ID từ JWT token
             String userId = (String) httpRequest.getAttribute("userId");
-            
+
             List<NoteResponse> pinnedNotes = noteService.getPinnedNotesByUser(userId);
-            
+
             response.put("success", true);
             response.put("message", "Lấy danh sách notes đã pin thành công");
             response.put("data", pinnedNotes);
             response.put("total", pinnedNotes.size());
-            
+
             return ResponseEntity.ok(response);
-            
+
         } catch (Exception e) {
             response.put("success", false);
             response.put("message", "Lỗi khi lấy danh sách notes đã pin: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
-    
+
     // ================ GĐ6: ENDPOINTS CHO TÌM KIẾM ================
-    
+
     /**
      * GĐ6: Tìm kiếm notes theo từ khóa
      */
@@ -352,15 +353,15 @@ public class NoteController {
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String tag,
             HttpServletRequest httpRequest) {
-        
+
         Map<String, Object> response = new HashMap<>();
-        
+
         try {
             // Lấy user ID từ JWT token
             String userId = (String) httpRequest.getAttribute("userId");
-            
+
             List<NoteResponse> searchResults;
-            
+
             if (tag != null && !tag.isEmpty()) {
                 // Tìm kiếm theo tag
                 searchResults = noteService.searchNotesByTag(userId, tag);
@@ -374,13 +375,13 @@ public class NoteController {
                 searchResults = noteService.getNotesByUser(userId);
                 response.put("message", "Lấy tất cả notes thành công");
             }
-            
+
             response.put("success", true);
             response.put("data", searchResults);
             response.put("total", searchResults.size());
-            
+
             return ResponseEntity.ok(response);
-            
+
         } catch (Exception e) {
             response.put("success", false);
             response.put("message", "Lỗi khi tìm kiếm notes: " + e.getMessage());
@@ -389,7 +390,7 @@ public class NoteController {
     }
 
     // ================ THỐNG KÊ ================
-    
+
     /**
      * Lấy thống kê notes của user
      */
@@ -397,38 +398,38 @@ public class NoteController {
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     public ResponseEntity<Map<String, Object>> getUserNoteStats(
             HttpServletRequest httpRequest) {
-        
+
         Map<String, Object> response = new HashMap<>();
-        
+
         try {
             // Lấy user ID từ JWT token
             String userId = (String) httpRequest.getAttribute("userId");
-            
+
             // Lấy thống kê cơ bản
             Map<String, Object> stats = new HashMap<>();
-            
+
             List<NoteResponse> allNotes = noteService.getNotesByUser(userId);
             List<NoteResponse> pinnedNotes = noteService.getPinnedNotesByUser(userId);
             List<TagResponse> userTags = tagService.getAllTagsByUser(userId);
-            
+
             stats.put("totalNotes", allNotes.size());
             stats.put("pinnedNotes", pinnedNotes.size());
             stats.put("totalTags", userTags.size());
             stats.put("unpinnedNotes", allNotes.size() - pinnedNotes.size());
-            
+
             response.put("success", true);
             response.put("message", "Lấy thống kê thành công");
             response.put("data", stats);
-            
+
             return ResponseEntity.ok(response);
-            
+
         } catch (Exception e) {
             response.put("success", false);
             response.put("message", "Lỗi khi lấy thống kê: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
-    
+
     /**
      * GĐ6: Tìm kiếm notes theo tagId
      */
@@ -437,9 +438,9 @@ public class NoteController {
     public ResponseEntity<Map<String, Object>> searchNotesByTag(
             @PathVariable String tagId,
             HttpServletRequest httpRequest) {
-        
+
         Map<String, Object> response = new HashMap<>();
-        
+
         try {
             String userId = (String) httpRequest.getAttribute("userId");
             if (userId == null) {
@@ -447,12 +448,12 @@ public class NoteController {
                 response.put("message", "Người dùng chưa được xác thực");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
             }
-            
+
             List<NoteResponse> notes = noteService.searchNotesByTag(userId, tagId);
             response.put("success", true);
             response.put("data", notes);
             return ResponseEntity.ok(response);
-            
+
         } catch (IllegalArgumentException e) {
             response.put("success", false);
             response.put("message", e.getMessage());
@@ -463,7 +464,7 @@ public class NoteController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
-    
+
     /**
      * GĐ6: Tìm kiếm notes theo nhiều tagIds
      */
@@ -472,9 +473,9 @@ public class NoteController {
     public ResponseEntity<Map<String, Object>> searchNotesByTags(
             @RequestBody List<String> tagIds,
             HttpServletRequest httpRequest) {
-        
+
         Map<String, Object> response = new HashMap<>();
-        
+
         try {
             String userId = (String) httpRequest.getAttribute("userId");
             if (userId == null) {
@@ -482,18 +483,18 @@ public class NoteController {
                 response.put("message", "Người dùng chưa được xác thực");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
             }
-            
+
             if (tagIds == null || tagIds.isEmpty()) {
                 response.put("success", false);
                 response.put("message", "Danh sách tag không được để trống");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
             }
-            
+
             List<NoteResponse> notes = noteService.searchNotesByTags(userId, tagIds);
             response.put("success", true);
             response.put("data", notes);
             return ResponseEntity.ok(response);
-            
+
         } catch (IllegalArgumentException e) {
             response.put("success", false);
             response.put("message", e.getMessage());
@@ -504,7 +505,7 @@ public class NoteController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
-    
+
     /**
      * GĐ7: Upload files cho note (giới hạn 5MB/note)
      */
@@ -514,31 +515,31 @@ public class NoteController {
             @PathVariable String noteId,
             @RequestParam("files") List<MultipartFile> files,
             HttpServletRequest httpRequest) {
-        
+
         Map<String, Object> response = new HashMap<>();
-        
+
         try {
             String userId = (String) httpRequest.getAttribute("userId");
-            
+
             if (userId == null) {
                 response.put("success", false);
                 response.put("message", "Không xác định được user");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
             }
-            
+
             if (files == null || files.isEmpty()) {
                 response.put("success", false);
                 response.put("message", "Không có file nào được chọn");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
             }
-            
+
             Note updatedNote = noteService.uploadFiles(noteId, userId, files);
-            
+
             response.put("success", true);
             response.put("message", "Upload thành công " + files.size() + " file(s)");
             response.put("data", updatedNote);
             return ResponseEntity.ok(response);
-            
+
         } catch (IllegalArgumentException e) {
             response.put("success", false);
             response.put("message", e.getMessage());
@@ -553,7 +554,7 @@ public class NoteController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
-    
+
     /**
      * GĐ7: Lấy danh sách file của note
      */
@@ -562,31 +563,31 @@ public class NoteController {
     public ResponseEntity<Map<String, Object>> getNoteFiles(
             @PathVariable String noteId,
             HttpServletRequest httpRequest) {
-        
+
         Map<String, Object> response = new HashMap<>();
-        
+
         try {
             String userId = (String) httpRequest.getAttribute("userId");
-            
+
             if (userId == null) {
                 response.put("success", false);
                 response.put("message", "Không xác định được user");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
             }
-            
+
             List<Attachment> files = noteService.getNoteFiles(noteId, userId);
-            
+
             response.put("success", true);
             response.put("data", files);
             return ResponseEntity.ok(response);
-            
+
         } catch (Exception e) {
             response.put("success", false);
             response.put("message", "Lỗi khi lấy danh sách file: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
-    
+
     /**
      * GĐ7: Xóa file khỏi note
      */
@@ -596,32 +597,32 @@ public class NoteController {
             @PathVariable String noteId,
             @PathVariable String fileName,
             HttpServletRequest httpRequest) {
-        
+
         Map<String, Object> response = new HashMap<>();
-        
+
         try {
             String userId = (String) httpRequest.getAttribute("userId");
-            
+
             if (userId == null) {
                 response.put("success", false);
                 response.put("message", "Không xác định được user");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
             }
-            
+
             Note updatedNote = noteService.deleteFileFromNote(noteId, userId, fileName);
-            
+
             response.put("success", true);
             response.put("message", "Xóa file thành công");
             response.put("data", updatedNote);
             return ResponseEntity.ok(response);
-            
+
         } catch (Exception e) {
             response.put("success", false);
             response.put("message", "Lỗi khi xóa file: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
-    
+
     /**
      * GĐ7: Download file attachment
      */
@@ -631,34 +632,34 @@ public class NoteController {
             @PathVariable String noteId,
             @PathVariable String fileName,
             HttpServletRequest httpRequest) {
-        
+
         try {
             String userId = (String) httpRequest.getAttribute("userId");
-            
+
             if (userId == null) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
             }
-            
+
             // Lấy thông tin file
             Attachment fileInfo = noteService.getFileInfo(noteId, userId, fileName);
-            
+
             // Lấy nội dung file
             byte[] fileContent = noteService.getFileContent(noteId, userId, fileName);
-            
+
             // Lấy content type
             String contentType = fileStorageService.getContentType(fileName);
-            
+
             return ResponseEntity.ok()
                     .header("Content-Type", contentType)
                     .header("Content-Length", String.valueOf(fileContent.length))
                     .header("Content-Disposition", "attachment; filename=\"" + fileInfo.getFileName() + "\"")
                     .body(fileContent);
-            
+
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
     }
-    
+
     /**
      * GĐ8: Export note to PDF format
      */
@@ -668,53 +669,53 @@ public class NoteController {
             @PathVariable String noteId,
             @RequestParam(defaultValue = "pdf") String format,
             HttpServletRequest httpRequest) {
-        
+
         try {
             String userId = (String) httpRequest.getAttribute("userId");
-            
+
             if (userId == null) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
             }
-            
+
             byte[] exportData;
             String contentType;
             String fileExtension;
-            
+
             switch (format.toLowerCase()) {
                 case "pdf":
                     exportData = noteService.exportNoteToPdf(noteId, userId);
                     contentType = "application/pdf";
                     fileExtension = ".pdf";
                     break;
-                    
+
                 case "docx":
                     exportData = noteService.exportNoteToDocx(noteId, userId);
                     contentType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
                     fileExtension = ".docx";
                     break;
-                    
+
                 default:
                     return ResponseEntity.badRequest().build();
             }
-            
+
             // Lấy tên note để tạo filename
             Optional<NoteResponse> noteOpt = noteService.getNoteById(noteId, userId);
             if (!noteOpt.isPresent()) {
                 return ResponseEntity.notFound().build();
             }
             String fileName = sanitizeFileName(noteOpt.get().getTitle()) + fileExtension;
-            
+
             return ResponseEntity.ok()
                     .header("Content-Type", contentType)
                     .header("Content-Length", String.valueOf(exportData.length))
                     .header("Content-Disposition", "attachment; filename=\"" + fileName + "\"")
                     .body(exportData);
-            
+
         } catch (IOException | RuntimeException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
-    
+
     /**
      * Helper method to sanitize filename
      */
@@ -722,13 +723,13 @@ public class NoteController {
         if (fileName == null || fileName.trim().isEmpty()) {
             return "note_export";
         }
-        
+
         // Remove invalid characters for filename
         return fileName.replaceAll("[\\\\/:*?\"<>|]", "_")
-                      .replaceAll("\\s+", "_")
-                      .substring(0, Math.min(fileName.length(), 50)); // Limit length
+                .replaceAll("\\s+", "_")
+                .substring(0, Math.min(fileName.length(), 50)); // Limit length
     }
-    
+
     /**
      * GĐ9: Lấy lịch sử phiên bản của note
      */
@@ -737,28 +738,29 @@ public class NoteController {
     public ResponseEntity<Map<String, Object>> getNoteVersionHistory(
             @PathVariable String noteId,
             HttpServletRequest request) {
-        
+
         String userId = (String) request.getAttribute("userId");
-        
+
         try {
-            List<com.workify.backend.dto.NoteVersionResponse> versions = noteService.getNoteVersionHistory(noteId, userId);
-            
+            List<com.workify.backend.dto.NoteVersionResponse> versions = noteService.getNoteVersionHistory(noteId,
+                    userId);
+
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("data", versions);
             response.put("total", versions.size());
-            
+
             return ResponseEntity.ok(response);
-            
+
         } catch (Exception e) {
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("success", false);
             errorResponse.put("message", "Lỗi khi lấy lịch sử phiên bản: " + e.getMessage());
-            
+
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }
-    
+
     /**
      * GĐ9: Khôi phục note về một phiên bản cụ thể (undo/redo)
      */
@@ -768,40 +770,136 @@ public class NoteController {
             @PathVariable String noteId,
             @RequestParam int versionIndex,
             HttpServletRequest request) {
-        
+
         String userId = (String) request.getAttribute("userId");
-        
+
         try {
             Optional<NoteResponse> restoredNoteOpt = noteService.restoreNoteToVersion(noteId, versionIndex, userId);
-            
+
             if (!restoredNoteOpt.isPresent()) {
                 Map<String, Object> errorResponse = new HashMap<>();
                 errorResponse.put("success", false);
                 errorResponse.put("message", "Note không tồn tại hoặc bạn không có quyền truy cập");
-                
+
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
             }
-            
+
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("data", restoredNoteOpt.get());
             response.put("message", "Đã khôi phục note về phiên bản " + versionIndex);
-            
+
             return ResponseEntity.ok(response);
-            
+
         } catch (IllegalArgumentException e) {
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("success", false);
             errorResponse.put("message", e.getMessage());
-            
+
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
-            
+
         } catch (Exception e) {
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("success", false);
             errorResponse.put("message", "Lỗi khi khôi phục note: " + e.getMessage());
-            
+
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+    }
+
+    // ========== WORKSPACE NOTE ENDPOINTS ==========
+
+    /**
+     * Chia sẻ note tới workspace
+     */
+    @PostMapping("/{noteId}/share-to-workspace/{workspaceId}")
+    public ResponseEntity<Map<String, Object>> shareNoteToWorkspace(
+            @PathVariable String noteId,
+            @PathVariable String workspaceId) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            String userId = SecurityUtils.getCurrentUserId();
+
+            Note result = noteService.shareNoteToWorkspace(noteId, workspaceId, userId);
+
+            response.put("success", true);
+            response.put("message", "Note shared to workspace successfully");
+            response.put("data", new NoteResponse(result));
+            return ResponseEntity.ok(response);
+
+        } catch (SecurityException e) {
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+        } catch (IllegalArgumentException e) {
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Failed to share note: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    /**
+     * Lấy notes của workspace
+     */
+    @GetMapping("/workspace/{workspaceId}")
+    public ResponseEntity<Map<String, Object>> getWorkspaceNotes(@PathVariable String workspaceId) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            String userId = SecurityUtils.getCurrentUserId();
+
+            List<Note> notes = noteService.getWorkspaceNotesForUser(workspaceId, userId);
+            List<NoteResponse> noteResponses = notes.stream()
+                    .map(NoteResponse::new)
+                    .collect(java.util.stream.Collectors.toList());
+
+            response.put("success", true);
+            response.put("data", noteResponses);
+            response.put("count", noteResponses.size());
+            return ResponseEntity.ok(response);
+
+        } catch (SecurityException e) {
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Failed to retrieve workspace notes: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    /**
+     * Unshare note khỏi workspace
+     */
+    @DeleteMapping("/{noteId}/unshare-from-workspace")
+    public ResponseEntity<Map<String, Object>> unshareNoteFromWorkspace(@PathVariable String noteId) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            String userId = SecurityUtils.getCurrentUserId();
+
+            Note result = noteService.unshareNoteFromWorkspace(noteId, userId);
+
+            response.put("success", true);
+            response.put("message", "Note unshared from workspace successfully");
+            response.put("data", new NoteResponse(result));
+            return ResponseEntity.ok(response);
+
+        } catch (SecurityException e) {
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+        } catch (IllegalArgumentException e) {
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Failed to unshare note: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
 }

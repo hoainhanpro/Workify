@@ -124,6 +124,14 @@ public class TaskResponse {
     private LocalDateTime updatedAt;
     private LocalDateTime completedAt;
 
+    // Workspace integration fields
+    private String workspaceId; // ID của workspace (null = personal task)
+    private String workspaceName; // Tên workspace để hiển thị
+    private String assignedToUserId; // ID của user được assign
+    private String assignedToUsername; // Username của user được assign
+    private String assignedToFullName; // Full name của user được assign
+    private Boolean isSharedToWorkspace = false; // task có được chia sẻ lên workspace không
+
     // Constructors
     public TaskResponse() {
     }
@@ -151,6 +159,11 @@ public class TaskResponse {
         this.dueDate = task.getDueDate();
         this.googleCalendarEventId = task.getGoogleCalendarEventId();
         this.syncWithCalendar = task.getSyncWithCalendar();
+
+        // Workspace integration fields
+        this.workspaceId = task.getWorkspaceId();
+        this.assignedToUserId = task.getAssignedToUserId();
+        this.isSharedToWorkspace = task.getIsSharedToWorkspace();
     }
 
     // Getters and Setters
@@ -266,5 +279,54 @@ public class TaskResponse {
 
     public void setSyncWithCalendar(Boolean syncWithCalendar) {
         this.syncWithCalendar = syncWithCalendar;
+    }
+
+    // Workspace fields getters and setters
+    public String getWorkspaceId() {
+        return workspaceId;
+    }
+
+    public void setWorkspaceId(String workspaceId) {
+        this.workspaceId = workspaceId;
+    }
+
+    public String getWorkspaceName() {
+        return workspaceName;
+    }
+
+    public void setWorkspaceName(String workspaceName) {
+        this.workspaceName = workspaceName;
+    }
+
+    public String getAssignedToUserId() {
+        return assignedToUserId;
+    }
+
+    public void setAssignedToUserId(String assignedToUserId) {
+        this.assignedToUserId = assignedToUserId;
+    }
+
+    public String getAssignedToUsername() {
+        return assignedToUsername;
+    }
+
+    public void setAssignedToUsername(String assignedToUsername) {
+        this.assignedToUsername = assignedToUsername;
+    }
+
+    public String getAssignedToFullName() {
+        return assignedToFullName;
+    }
+
+    public void setAssignedToFullName(String assignedToFullName) {
+        this.assignedToFullName = assignedToFullName;
+    }
+
+    public Boolean getIsSharedToWorkspace() {
+        return isSharedToWorkspace;
+    }
+
+    public void setIsSharedToWorkspace(Boolean isSharedToWorkspace) {
+        this.isSharedToWorkspace = isSharedToWorkspace;
     }
 }

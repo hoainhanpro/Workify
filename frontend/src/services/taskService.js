@@ -517,6 +517,76 @@ const taskService = {
       throw error;
     }
   },
+
+  // Share task to workspace
+  shareTaskToWorkspace: async (taskId, workspaceId, permissions) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/tasks/${taskId}/share-to-workspace`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': getAuthToken(),
+        },
+        body: JSON.stringify({
+          workspaceId,
+          permissions
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error sharing task to workspace:', error);
+      throw error;
+    }
+  },
+
+  // Unshare task from workspace
+  unshareTaskFromWorkspace: async (taskId) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/tasks/${taskId}/unshare-from-workspace`, {
+        method: 'POST',
+        headers: {
+          'Authorization': getAuthToken(),
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error unsharing task from workspace:', error);
+      throw error;
+    }
+  },
+
+  // Add edit permission for task
+  addTaskEditPermission: async (taskId, targetUserId) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/tasks/${taskId}/add-edit-permission`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': getAuthToken(),
+        },
+        body: JSON.stringify({ targetUserId }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error adding edit permission:', error);
+      throw error;
+    }
+  },
 };
 
 export default taskService;

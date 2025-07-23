@@ -96,7 +96,14 @@ public class TaskRequest {
 
     // Calendar integration
     private LocalDateTime dueDate;
-    private Boolean syncWithCalendar; // Constructors
+    private Boolean syncWithCalendar;
+
+    // Workspace integration fields
+    private String workspaceId; // ID của workspace (null = personal task)
+    private String assignedToUserId; // ID của user được assign (null = unassigned)
+    private Boolean isSharedToWorkspace = false; // task có được chia sẻ lên workspace không
+
+    // Constructors
 
     public TaskRequest() {
     }
@@ -188,5 +195,30 @@ public class TaskRequest {
 
     public void setSyncWithCalendar(Boolean syncWithCalendar) {
         this.syncWithCalendar = syncWithCalendar;
+    }
+
+    // Workspace fields getters and setters
+    public String getWorkspaceId() {
+        return workspaceId;
+    }
+
+    public void setWorkspaceId(String workspaceId) {
+        this.workspaceId = workspaceId;
+    }
+
+    public String getAssignedToUserId() {
+        return assignedToUserId;
+    }
+
+    public void setAssignedToUserId(String assignedToUserId) {
+        this.assignedToUserId = assignedToUserId;
+    }
+
+    public Boolean getIsSharedToWorkspace() {
+        return isSharedToWorkspace;
+    }
+
+    public void setIsSharedToWorkspace(Boolean isSharedToWorkspace) {
+        this.isSharedToWorkspace = isSharedToWorkspace;
     }
 }

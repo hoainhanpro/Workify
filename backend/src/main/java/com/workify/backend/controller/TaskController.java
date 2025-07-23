@@ -816,4 +816,152 @@ public class TaskController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
+
+    // ========== WORKSPACE TASK ENDPOINTS ==========
+
+    /**
+     * Chia sẻ task tới workspace
+     */
+    @PostMapping("/{taskId}/share-to-workspace/{workspaceId}")
+    public ResponseEntity<Map<String, Object>> shareTaskToWorkspace(
+            @PathVariable String taskId,
+            @PathVariable String workspaceId) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            String userId = SecurityUtils.getCurrentUserId();
+
+            Task result = taskService.shareTaskToWorkspace(taskId, workspaceId, userId);
+
+            response.put("success", true);
+            response.put("message", "Task shared to workspace successfully");
+            response.put("data", new TaskResponse(result));
+            return ResponseEntity.ok(response);
+        } catch (SecurityException e) {
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Failed to share task: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    /**
+     * Assign task cho user trong workspace
+     */
+    @PostMapping("/{taskId}/assign/{assigneeId}")
+    public ResponseEntity<Map<String, Object>> assignTaskToUser(
+            @PathVariable String taskId,
+            @PathVariable String assigneeId) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            String userId = SecurityUtils.getCurrentUserId();
+
+            Task result = taskService.assignTaskToUser(taskId, assigneeId, userId);
+
+            response.put("success", true);
+            response.put("message", "Task assigned successfully");
+            response.put("data", new TaskResponse(result));
+            return ResponseEntity.ok(response);
+        } catch (SecurityException e) {
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Failed to assign task: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    /**
+     * Lấy tasks của workspace cho user
+     */
+    @GetMapping("/workspace/{workspaceId}")
+    public ResponseEntity<Map<String, Object>> getWorkspaceTasks(@PathVariable String workspaceId) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            String userId = SecurityUtils.getCurrentUserId();
+
+            List<Task> tasks = taskService.getWorkspaceTasksForUser(workspaceId, userId);
+            List<TaskResponse> taskResponses = tasks.stream()
+                    .map(TaskResponse::new)
+                    .collect(Collectors.toList());
+
+            response.put("success", true);
+            response.put("data", taskResponses);
+            response.put("count", taskResponses.size());
+            return ResponseEntity.ok(response);
+
+        } catch (SecurityException e) {
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Failed to retrieve workspace tasks: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    /**
+     * Lấy tasks được assigned cho user trong workspace
+     */
+    @GetMapping("/workspace/{workspaceId}/assigned-to-me")
+    public ResponseEntity<Map<String, Object>> getAssignedTasks(@PathVariable String workspaceId) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            String userId = SecurityUtils.getCurrentUserId();
+
+            List<Task> tasks = taskService.getWorkspaceTasksForUser(workspaceId, userId)
+                    .stream()
+                    .filter(task -> task.getAssignedToUserId() != null && task.getAssignedToUserId().equals(userId))
+                    .collect(Collectors.toList());
+
+            List<TaskResponse> taskResponses = tasks.stream()
+                    .map(TaskResponse::new)
+                    .collect(Collectors.toList());
+
+            response.put("success", true);
+            response.put("data", taskResponses);
+            response.put("count", taskResponses.size());
+            return ResponseEntity.ok(response);
+
+        } catch (SecurityException e) {
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Failed to retrieve assigned tasks: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    /**
+     * Unshare task khỏi workspace
+     */
+    @DeleteMapping("/{taskId}/unshare-from-workspace")
+    public ResponseEntity<Map<String, Object>> unshareTaskFromWorkspace(@PathVariable String taskId) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            String userId = SecurityUtils.getCurrentUserId();
+
+            Task result = taskService.unshareTaskFromWorkspace(taskId, userId);
+
+            response.put("success", true);
+            response.put("message", "Task unshared from workspace successfully");
+            response.put("data", new TaskResponse(result));
+            return ResponseEntity.ok(response);
+        } catch (SecurityException e) {
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Failed to unshare task: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
 }
