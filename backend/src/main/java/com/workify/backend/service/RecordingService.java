@@ -12,9 +12,6 @@ import org.jaudiotagger.audio.AudioFile;
 import org.jaudiotagger.audio.AudioFileIO;
 import org.jaudiotagger.audio.AudioHeader;
 import org.jaudiotagger.audio.exceptions.CannotReadException;
-import org.jaudiotagger.audio.exceptions.InvalidAudioFrameException;
-import org.jaudiotagger.audio.exceptions.ReadOnlyFileException;
-import org.jaudiotagger.tag.TagException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,7 +44,7 @@ public class RecordingService {
     
     // Các định dạng audio được hỗ trợ
     private static final String[] ALLOWED_AUDIO_EXTENSIONS = {
-        "mp3", "wav", "m4a", "aac", "ogg", "flac", "wma"
+        "mp3", "wav", "m4a", "aac", "ogg", "flac", "wma", "webm"
     };
 
     /**
@@ -115,7 +112,7 @@ public class RecordingService {
     /**
      * Trích xuất thời lượng của file âm thanh
      */
-    private Double getAudioDuration(File audioFile) throws IOException {
+    private Double getAudioDuration(File audioFile) {
         logger.info("Attempting to extract audio duration from file: {}", audioFile.getName());
         try {
             AudioFile f = AudioFileIO.read(audioFile);
@@ -126,18 +123,22 @@ public class RecordingService {
                 return duration;
             } else {
                 logger.warn("Audio header was null for file: {}", audioFile.getName());
-                throw new IOException("Could not read audio header from file: " + audioFile.getName());
+                return 0.0;
             }
+        } catch (CannotReadException e) {
+            // This can happen for formats not supported by the library, like webm
+            logger.warn("Cannot read audio file (possibly unsupported format like webm): {}. Defaulting duration to 0.", audioFile.getName());
+            return 0.0;
         } catch (Exception e) {
-            logger.error("Could not read audio duration for file: {}", audioFile.getName(), e);
-            throw new IOException("Failed to extract audio duration: " + e.getMessage(), e);
+            logger.error("Could not read audio duration for file: {}. Defaulting to 0.", audioFile.getName(), e);
+            return 0.0;
         }
     }
 
     /**
      * Lưu file âm thanh và tạo bản ghi trong database
      */
-    public Recording storeAndCreateRecording(MultipartFile file, String title, String userId) throws IOException {
+    public Recording storeAndCreateRecording(MultipartFile file, String title, String userId, Double durationFromFrontend) throws IOException {
         File tempFile = null;
         try {
             // Khởi tạo thư mục upload
@@ -155,15 +156,19 @@ public class RecordingService {
             Path targetLocation = Paths.get(uploadDir).resolve(uniqueFilename);
             Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
 
-            // Chuyển MultipartFile thành File để trích xuất duration
-            tempFile = Files.createTempFile("rec-", "." + fileExtension).toFile();
-            try (FileOutputStream fos = new FileOutputStream(tempFile)) {
-                fos.write(file.getBytes());
+            Double duration;
+            if (durationFromFrontend != null && durationFromFrontend > 0) {
+                duration = durationFromFrontend;
+                logger.info("Using duration from frontend: {}", duration);
+            } else {
+                // Chuyển MultipartFile thành File để trích xuất duration
+                tempFile = Files.createTempFile("rec-", "." + fileExtension).toFile();
+                try (FileOutputStream fos = new FileOutputStream(tempFile)) {
+                    fos.write(file.getBytes());
+                }
+                duration = getAudioDuration(tempFile);
+                logger.info("Extracted duration from backend: {} for file: {}", duration, originalFilename);
             }
-
-            // Trích xuất duration
-            Double duration = getAudioDuration(tempFile);
-            logger.info("Retrieved duration: {} for file: {}", duration, originalFilename);
 
             // Tạo đối tượng Recording
             Recording recording = new Recording();
@@ -173,7 +178,7 @@ public class RecordingService {
             recording.setAudioFileName(originalFilename);
             recording.setAudioFileUrl("/api/recordings/files/" + uniqueFilename);
             recording.setAudioFileSize(file.getSize());
-            recording.setDurationSeconds(duration); // Gán duration đã trích xuất
+            recording.setDurationSeconds(duration);
             recording.setStorageType("LOCAL");
             recording.setProcessingStatus("PENDING");
 

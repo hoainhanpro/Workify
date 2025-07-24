@@ -1,78 +1,38 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import recordingService from '../services/recordingService';
-import RecordingUpload from './RecordingUpload';
 import RecordingPlayer from './RecordingPlayer';
-import { FaCalendarAlt, FaFileAudio, FaSave, FaClock, FaCheckCircle, FaHourglassHalf, FaTimesCircle, FaQuestionCircle, FaPlay, FaTrash, FaUpload } from 'react-icons/fa';
+import ConfirmModal from './ConfirmModal'; // Import a custom confirm modal
+import { FaCalendarAlt, FaFileAudio, FaSave, FaClock, FaCheckCircle, FaHourglassHalf, FaTimesCircle, FaQuestionCircle, FaPlay, FaTrash } from 'react-icons/fa';
 import './RecordingList.css';
 
-const RecordingList = () => {
-  const [recordings, setRecordings] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [showUpload, setShowUpload] = useState(false);
+const RecordingList = ({ recordings, stats, loading, error, onRefresh }) => {
   const [selectedRecording, setSelectedRecording] = useState(null);
   const [showPlayer, setShowPlayer] = useState(false);
-  const [stats, setStats] = useState(null);
-
-  useEffect(() => {
-    loadRecordings();
-    loadStats();
-  }, []);
-
-  const loadRecordings = async () => {
-    try {
-      setLoading(true);
-      const data = await recordingService.getUserRecordings();
-      setRecordings(data);
-      setError('');
-    } catch (err) {
-      console.error('Error loading recordings:', err);
-      
-      if (err.message.includes('401') || err.message.includes('Unauthorized')) {
-        setError('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
-      } else {
-        setError(err.message);
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadStats = async () => {
-    try {
-      const statsData = await recordingService.getRecordingStats();
-      setStats(statsData);
-    } catch (err) {
-      console.error('Error loading stats:', err);
-      // Nếu lỗi 401, có thể token đã hết hạn
-      if (err.message.includes('401') || err.message.includes('Unauthorized')) {
-        console.warn('Token có thể đã hết hạn. Vui lòng đăng nhập lại.');
-      }
-    }
-  };
-
-  const handleUploadSuccess = (newRecording) => {
-    setRecordings([newRecording, ...recordings]);
-    setShowUpload(false);
-    loadStats(); // Refresh stats
-  };
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [recordingToDelete, setRecordingToDelete] = useState(null);
 
   const handlePlayRecording = (recording) => {
     setSelectedRecording(recording);
     setShowPlayer(true);
   };
 
-  const handleDeleteRecording = async (recordingId) => {
-    if (!window.confirm('Bạn có chắc chắn muốn xóa bản ghi này?')) {
-      return;
-    }
+  const openDeleteConfirm = (recordingId) => {
+    setRecordingToDelete(recordingId);
+    setShowConfirmModal(true);
+  };
+
+  const handleDeleteRecording = async () => {
+    if (!recordingToDelete) return;
 
     try {
-      await recordingService.deleteRecording(recordingId);
-      setRecordings(recordings.filter(r => r.id !== recordingId));
-      loadStats(); // Refresh stats
+      await recordingService.deleteRecording(recordingToDelete);
+      onRefresh(); // Call the refresh function passed from parent
     } catch (err) {
+      // You might want to show a more user-friendly error message here
       alert('Lỗi khi xóa bản ghi: ' + err.message);
+    } finally {
+      setShowConfirmModal(false);
+      setRecordingToDelete(null);
     }
   };
 
@@ -108,24 +68,11 @@ const RecordingList = () => {
   };
 
   if (loading) {
-    return (
-      <div className="recording-list-container">
-        <div className="loading">Đang tải danh sách bản ghi...</div>
-      </div>
-    );
+    return <div className="loading">Đang tải danh sách bản ghi...</div>;
   }
 
   return (
     <div className="recording-list-container">
-      <div className="recording-list-header">
-        <h2>Bản ghi âm của tôi</h2>
-        <button 
-          className="btn btn-primary"
-          onClick={() => setShowUpload(true)}
-        >
-          <FaUpload /> Tải lên bản ghi mới
-        </button>
-      </div>
 
       {stats && (
         <div className="recording-stats">
@@ -148,21 +95,11 @@ const RecordingList = () => {
         </div>
       )}
 
-      {error && (
-        <div className="error-message">
-          {error}
-        </div>
-      )}
+      {error && <div className="error-message">{error}</div>}
 
-      {recordings.length === 0 ? (
+      {recordings.length === 0 && !loading ? (
         <div className="empty-state">
           <p>Bạn chưa có bản ghi âm nào.</p>
-          <button 
-            className="btn btn-primary"
-            onClick={() => setShowUpload(true)}
-          >
-            Tải lên bản ghi đầu tiên
-          </button>
         </div>
       ) : (
         <div className="recording-list">
@@ -201,25 +138,13 @@ const RecordingList = () => {
                 </button>
                 <button 
                   className="btn btn-sm btn-danger"
-                  onClick={() => handleDeleteRecording(recording.id)}
+                  onClick={() => openDeleteConfirm(recording.id)}
                 >
                   <FaTrash /> Xóa
                 </button>
               </div>
             </div>
           ))}
-        </div>
-      )}
-
-      {/* Upload Modal */}
-      {showUpload && (
-        <div className="modal-overlay" onClick={() => setShowUpload(false)}>
-          <div onClick={e => e.stopPropagation()}>
-            <RecordingUpload
-              onUploadSuccess={handleUploadSuccess}
-              onClose={() => setShowUpload(false)}
-            />
-          </div>
         </div>
       )}
 
@@ -234,6 +159,15 @@ const RecordingList = () => {
           </div>
         </div>
       )}
+
+      {/* Confirm Delete Modal */}
+      <ConfirmModal
+        isOpen={showConfirmModal}
+        onClose={() => setShowConfirmModal(false)}
+        onConfirm={handleDeleteRecording}
+        title="Xác nhận xóa"
+        message="Bạn có chắc chắn muốn xóa bản ghi này không? Hành động này không thể hoàn tác."
+      />
     </div>
   );
 };

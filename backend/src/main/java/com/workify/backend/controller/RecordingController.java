@@ -31,10 +31,11 @@ public class RecordingController {
     @RequireAuth
     public ResponseEntity<?> uploadRecording(
             @RequestParam("file") MultipartFile file,
-            @RequestParam("title") String title) {
+            @RequestParam("title") String title,
+            @RequestParam(value = "duration", required = false) Double duration) {
         try {
             String userId = SecurityUtils.getCurrentUserId();
-            Recording newRecording = recordingService.storeAndCreateRecording(file, title, userId);
+            Recording newRecording = recordingService.storeAndCreateRecording(file, title, userId, duration);
             return ResponseEntity.status(HttpStatus.CREATED).body(newRecording);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
@@ -209,8 +210,10 @@ public class RecordingController {
                 return "audio/flac";
             case "wma":
                 return "audio/x-ms-wma";
+            case "webm":
+                return "audio/webm";
             default:
-                return "audio/mpeg"; // Default fallback
+                return "application/octet-stream"; // Default fallback for unknown types
         }
     }
 }

@@ -13,10 +13,13 @@ class RecordingService {
   /**
    * Upload file ghi âm
    */
-  async uploadRecording(file, title) {
+  async uploadRecording(file, title, duration) {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('title', title);
+    if (duration) {
+      formData.append('duration', duration);
+    }
 
     const response = await fetch(`${API_BASE_URL}/recordings/upload`, {
       method: 'POST',
