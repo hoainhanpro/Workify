@@ -96,6 +96,13 @@
             <artifactId>jsoup</artifactId>
             <version>1.15.4</version>
         </dependency>
+
+        <!-- Audio Metadata Extraction -->
+        <dependency>
+            <groupId>net.jthink</groupId>
+            <artifactId>jaudiotagger</artifactId>
+            <version>3.0.1</version>
+        </dependency>
         
         <!-- DOCX Export -->
         <dependency>
@@ -138,4 +145,4 @@
             </plugin>
         </plugins>
     </build>
-</project> 
+</project>

@@ -50,7 +50,7 @@ public class Recording {
     private String processingStatus = "PENDING"; // "PENDING" | "COMPLETED" | "FAILED"
     
     // Metadata
-    private Integer duration; // Thời lượng (phút)
+    private Double durationSeconds; // Thời lượng (giây) - chính xác hơn cho seek bar
     
     private String language = "vi"; // Ngôn ngữ ("vi" | "en")
     
@@ -163,12 +163,12 @@ public class Recording {
         this.processingStatus = processingStatus;
     }
     
-    public Integer getDuration() {
-        return duration;
+    public Double getDurationSeconds() {
+        return durationSeconds;
     }
     
-    public void setDuration(Integer duration) {
-        this.duration = duration;
+    public void setDurationSeconds(Double durationSeconds) {
+        this.durationSeconds = durationSeconds;
     }
     
     public String getLanguage() {
@@ -215,7 +215,7 @@ public class Recording {
                 ", audioFileSize=" + audioFileSize +
                 ", storageType='" + storageType + '\'' +
                 ", processingStatus='" + processingStatus + '\'' +
-                ", duration=" + duration +
+                ", durationSeconds=" + durationSeconds +
                 ", language='" + language + '\'' +
                 ", tagIds=" + tagIds +
                 ", createdAt=" + createdAt +

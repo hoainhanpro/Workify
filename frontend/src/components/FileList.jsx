@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getNoteFiles, deleteFileFromNote, downloadFileFromNote, formatFileSize } from '../services/fileService';
+import { FaFilePdf, FaFileWord, FaFileExcel, FaFilePowerpoint, FaFileAlt, FaFileImage, FaFile, FaDownload, FaTrash, FaSpinner } from 'react-icons/fa';
 import '../styles/FileUpload.css';
 
 /**
@@ -68,23 +69,13 @@ const FileList = ({ noteId, refreshTrigger, onFileDeleted, onError }) => {
     // Get file icon based on file type
     const getFileIcon = (fileType) => {
         const type = fileType?.toLowerCase();
-        switch (type) {
-            case 'pdf': return '📄';
-            case 'doc':
-            case 'docx': return '📝';
-            case 'xls':
-            case 'xlsx': return '📊';
-            case 'ppt':
-            case 'pptx': return '📽️';
-            case 'txt':
-            case 'rtf': return '📃';
-            case 'jpg':
-            case 'jpeg':
-            case 'png':
-            case 'gif':
-            case 'bmp': return '🖼️';
-            default: return '📎';
-        }
+        if (type.includes('pdf')) return <FaFilePdf />;
+        if (type.includes('doc')) return <FaFileWord />;
+        if (type.includes('xls')) return <FaFileExcel />;
+        if (type.includes('ppt')) return <FaFilePowerpoint />;
+        if (type.includes('txt') || type.includes('rtf')) return <FaFileAlt />;
+        if (type.includes('jp') || type.includes('png') || type.includes('gif') || type.includes('bmp')) return <FaFileImage />;
+        return <FaFile />;
     };
 
     // Format upload date
@@ -155,7 +146,7 @@ const FileList = ({ noteId, refreshTrigger, onFileDeleted, onError }) => {
                                 disabled={downloadingFile === file.fileName}
                                 title="Download file"
                             >
-                                {downloadingFile === file.fileName ? '⏳' : '⬇️'}
+                                {downloadingFile === file.fileName ? <FaSpinner className="spinner-icon" /> : <FaDownload />}
                             </button>
                             <button
                                 className="delete-btn"
@@ -163,7 +154,7 @@ const FileList = ({ noteId, refreshTrigger, onFileDeleted, onError }) => {
                                 disabled={deletingFile === file.fileName}
                                 title="Xóa file"
                             >
-                                {deletingFile === file.fileName ? '⏳' : '🗑️'}
+                                {deletingFile === file.fileName ? <FaSpinner className="spinner-icon" /> : <FaTrash />}
                             </button>
                         </div>
                     </div>

@@ -14,6 +14,7 @@ import Tags from './pages/Tags'
 import Mail from './pages/Mail'
 import Profile from './pages/Profile'
 import Workspaces from './pages/Workspaces'
+import Recordings from './pages/Recordings'
 import GoogleCallback from './pages/GoogleCallback'
 import GoogleLinkCallback from './pages/GoogleLinkCallback'
 import ProtectedRoute from './components/ProtectedRoute'
@@ -63,6 +64,7 @@ function App() {
             <Route path="tags" element={<Tags />} />
             <Route path="tasks" element={<Tasks />} />
             <Route path="notes" element={<Notes />} />
+            <Route path="recordings" element={<Recordings />} />
             <Route path="mail" element={<Mail />} />
             <Route path="profile" element={<Profile />} />
           </Route>

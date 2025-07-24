@@ -48,6 +48,12 @@ const WorkifySidebar = () => {
       description: 'Tạo và quản lý note'
     },
     {
+      path: '/workify/recordings',
+      icon: 'bi-mic',
+      label: 'Ghi âm',
+      description: 'Quản lý bản ghi âm'
+    },
+    {
       path: '/workify/calendar',
       icon: 'bi-calendar3',
       label: 'Lịch',
