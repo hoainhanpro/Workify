@@ -5,6 +5,7 @@ import PromptModal from './PromptModal'; // Import the custom prompt modal
 import './LiveRecorder.css';
 
 const LiveRecorder = ({ onRecordingComplete }) => {
+  const [recordingType, setRecordingType] = useState(null); // 'mic' or 'system'
   const [isRecording, setIsRecording] = useState(false);
   const [audioBlob, setAudioBlob] = useState(null);
   const [audioUrl, setAudioUrl] = useState(null);
@@ -16,11 +17,42 @@ const LiveRecorder = ({ onRecordingComplete }) => {
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const timerRef = useRef(null);
+  const streamRef = useRef(null); // To hold the stream and stop it later
 
-  const startRecording = async () => {
+  const startRecording = async (type) => {
+    setRecordingType(type);
+    setError('');
+
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mediaRecorderRef.current = new MediaRecorder(stream);
+      let stream;
+      if (type === 'mic') {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      } else if (type === 'system') {
+        stream = await navigator.mediaDevices.getDisplayMedia({
+          video: true,
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            sampleRate: 44100,
+          },
+        });
+      } else {
+        return;
+      }
+
+      streamRef.current = stream; // Store the stream
+
+      // Check if the stream has an audio track
+      const audioTracks = stream.getAudioTracks();
+      if (audioTracks.length === 0) {
+        setError("Không tìm thấy luồng âm thanh. Vui lòng đảm bảo bạn đã chọn 'Chia sẻ âm thanh tab' (Share tab audio) khi được hỏi.");
+        stream.getTracks().forEach(track => track.stop()); // Stop the stream if no audio
+        return;
+      }
+
+      // Create a new stream with only the audio track(s)
+      const audioStream = new MediaStream(audioTracks);
+      mediaRecorderRef.current = new MediaRecorder(audioStream);
       audioChunksRef.current = [];
 
       mediaRecorderRef.current.ondataavailable = (event) => {
@@ -32,8 +64,10 @@ const LiveRecorder = ({ onRecordingComplete }) => {
         setAudioBlob(blob);
         const url = URL.createObjectURL(blob);
         setAudioUrl(url);
-        // Stop all tracks to turn off the microphone indicator
-        stream.getTracks().forEach(track => track.stop());
+        // Stop all tracks from the original stream
+        if (streamRef.current) {
+          streamRef.current.getTracks().forEach(track => track.stop());
+        }
       };
 
       mediaRecorderRef.current.start();
@@ -44,7 +78,7 @@ const LiveRecorder = ({ onRecordingComplete }) => {
       }, 1000);
     } catch (err) {
       console.error("Error starting recording:", err);
-      setError("Không thể bắt đầu ghi âm. Vui lòng cấp quyền truy cập microphone.");
+      setError("Không thể bắt đầu ghi âm. Vui lòng cấp quyền và chọn nguồn chia sẻ.");
     }
   };
 
@@ -80,6 +114,7 @@ const LiveRecorder = ({ onRecordingComplete }) => {
   };
 
   const resetRecorder = () => {
+    setRecordingType(null);
     setIsRecording(false);
     setAudioBlob(null);
     if (audioUrl) {
@@ -107,9 +142,15 @@ const LiveRecorder = ({ onRecordingComplete }) => {
       
       <div className="recorder-controls">
         {!isRecording && !audioUrl && (
-          <button onClick={startRecording} className="record-btn start">
-            <BsRecordCircle /> Bắt đầu ghi
-          </button>
+          <div className="recording-options">
+            <p>Chọn nguồn ghi âm:</p>
+            <button onClick={() => startRecording('mic')} className="record-btn start">
+              <BsRecordCircle /> Ghi từ Microphone
+            </button>
+            <button onClick={() => startRecording('system')} className="record-btn start system-audio">
+              <BsRecordCircle /> Ghi âm thanh hệ thống
+            </button>
+          </div>
         )}
 
         {isRecording && (

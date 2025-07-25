@@ -221,8 +221,8 @@ Dự án Workify là một ứng dụng quản lý công việc và ghi chú, đ
     * Tìm kiếm task theo từ khoá, mức độ (✔️)
 
 * **Recording & Audio File Management**
-    * Ghi âm trực tiếp trong ứng dụng (❌)
-    * Lưu trữ và quản lý file ghi âm (❌)
+    * Ghi âm trực tiếp trong ứng dụng (✔️)
+    * Lưu trữ và quản lý file ghi âm (✔️)
 
 ## Giai đoạn 2: Hợp Tác & Thông Báo (Collaboration & Notification)
 

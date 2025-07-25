@@ -15,9 +15,29 @@
 
 .recorder-controls {
   display: flex;
+  flex-direction: column; /* Changed to column for options */
   justify-content: center;
   align-items: center;
   margin-bottom: 15px;
+  gap: 15px; /* Added gap */
+}
+
+.recording-options {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.recording-options p {
+  margin: 0 0 5px 0;
+  font-weight: bold;
+  color: #555;
+}
+
+.recording-options .record-btn {
+  width: 100%;
+  justify-content: center;
 }
 
 .record-btn {
@@ -35,6 +55,14 @@
 .record-btn.start {
   background-color: #28a745;
   color: white;
+}
+
+.record-btn.start.system-audio {
+  background-color: #17a2b8; /* A different color for system audio */
+}
+
+.record-btn.start.system-audio:hover {
+  background-color: #138496;
 }
 
 .record-btn.start:hover {
