@@ -72,6 +72,7 @@ ehthumbs.db
 *.swp
 *.swo
 .cursor/
+.clinerules/
 
 # Temporary folders
 tmp/
