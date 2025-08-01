@@ -1,0 +1,89 @@
+.notification-bell-container {
+  position: relative;
+  display: inline-block;
+}
+
+.notification-bell-btn {
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.notification-bell-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.notification-bell-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.notification-icon {
+  font-size: 1.4rem;
+  transition: all 0.2s ease;
+}
+
+.notification-icon.active {
+  color: #ffc107;
+  animation: bellRing 0.5s ease-in-out;
+}
+
+.notification-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  background-color: #dc3545;
+  color: white;
+  font-size: 0.75rem;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 10px;
+  min-width: 18px;
+  text-align: center;
+  line-height: 1.2;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+@keyframes bellRing {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(15deg); }
+  75% { transform: rotate(-15deg); }
+}
+
+/* Animation khi có thông báo mới */
+.notification-bell-btn.new-notification {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(255, 193, 7, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 193, 7, 0);
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .notification-icon {
+    font-size: 1.2rem;
+  }
+  
+  .notification-badge {
+    font-size: 0.7rem;
+    padding: 1px 4px;
+    min-width: 16px;
+  }
+}

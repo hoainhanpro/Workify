@@ -5,6 +5,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.mongodb.config.EnableMongoAuditing;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.web.client.RestTemplate;
 
 import com.workify.backend.config.CorsProperties;
@@ -13,6 +14,7 @@ import com.workify.backend.config.JwtProperties;
 
 @SpringBootApplication
 @EnableMongoAuditing
+@EnableScheduling
 @EnableConfigurationProperties({JwtProperties.class, CorsProperties.class, GoogleOAuthProperties.class})
 public class WorkifyBackendApplication {
 
@@ -24,4 +26,4 @@ public class WorkifyBackendApplication {
     public RestTemplate restTemplate() {
         return new RestTemplate();
     }
-} 
+}

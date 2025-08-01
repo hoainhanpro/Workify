@@ -5,6 +5,7 @@ D:\HoaiNhan\Code\Code_java\Workify\backend\src\main\java\com\workify\backend\con
 D:\HoaiNhan\Code\Code_java\Workify\backend\src\main\java\com\workify\backend\config\SecurityConfig.java
 D:\HoaiNhan\Code\Code_java\Workify\backend\src\main\java\com\workify\backend\controller\AuthController.java
 D:\HoaiNhan\Code\Code_java\Workify\backend\src\main\java\com\workify\backend\controller\NoteController.java
+D:\HoaiNhan\Code\Code_java\Workify\backend\src\main\java\com\workify\backend\controller\NotificationController.java
 D:\HoaiNhan\Code\Code_java\Workify\backend\src\main\java\com\workify\backend\controller\OAuthController.java
 D:\HoaiNhan\Code\Code_java\Workify\backend\src\main\java\com\workify\backend\controller\RecordingController.java
 D:\HoaiNhan\Code\Code_java\Workify\backend\src\main\java\com\workify\backend\controller\TagController.java
@@ -25,6 +26,7 @@ D:\HoaiNhan\Code\Code_java\Workify\backend\src\main\java\com\workify\backend\dto
 D:\HoaiNhan\Code\Code_java\Workify\backend\src\main\java\com\workify\backend\dto\NoteResponse.java
 D:\HoaiNhan\Code\Code_java\Workify\backend\src\main\java\com\workify\backend\dto\NoteUpdateRequest.java
 D:\HoaiNhan\Code\Code_java\Workify\backend\src\main\java\com\workify\backend\dto\NoteVersionResponse.java
+D:\HoaiNhan\Code\Code_java\Workify\backend\src\main\java\com\workify\backend\dto\NotificationResponse.java
 D:\HoaiNhan\Code\Code_java\Workify\backend\src\main\java\com\workify\backend\dto\RefreshTokenRequest.java
 D:\HoaiNhan\Code\Code_java\Workify\backend\src\main\java\com\workify\backend\dto\RegisterRequest.java
 D:\HoaiNhan\Code\Code_java\Workify\backend\src\main\java\com\workify\backend\dto\TagCreateRequest.java
@@ -43,6 +45,7 @@ D:\HoaiNhan\Code\Code_java\Workify\backend\src\main\java\com\workify\backend\mod
 D:\HoaiNhan\Code\Code_java\Workify\backend\src\main\java\com\workify\backend\model\MemberStatus.java
 D:\HoaiNhan\Code\Code_java\Workify\backend\src\main\java\com\workify\backend\model\Note.java
 D:\HoaiNhan\Code\Code_java\Workify\backend\src\main\java\com\workify\backend\model\NoteVersion.java
+D:\HoaiNhan\Code\Code_java\Workify\backend\src\main\java\com\workify\backend\model\Notification.java
 D:\HoaiNhan\Code\Code_java\Workify\backend\src\main\java\com\workify\backend\model\OAuthToken.java
 D:\HoaiNhan\Code\Code_java\Workify\backend\src\main\java\com\workify\backend\model\Recording.java
 D:\HoaiNhan\Code\Code_java\Workify\backend\src\main\java\com\workify\backend\model\RevokedToken.java
@@ -55,6 +58,7 @@ D:\HoaiNhan\Code\Code_java\Workify\backend\src\main\java\com\workify\backend\mod
 D:\HoaiNhan\Code\Code_java\Workify\backend\src\main\java\com\workify\backend\model\WorkspaceMember.java
 D:\HoaiNhan\Code\Code_java\Workify\backend\src\main\java\com\workify\backend\model\WorkspaceRole.java
 D:\HoaiNhan\Code\Code_java\Workify\backend\src\main\java\com\workify\backend\repository\NoteRepository.java
+D:\HoaiNhan\Code\Code_java\Workify\backend\src\main\java\com\workify\backend\repository\NotificationRepository.java
 D:\HoaiNhan\Code\Code_java\Workify\backend\src\main\java\com\workify\backend\repository\OAuthTokenRepository.java
 D:\HoaiNhan\Code\Code_java\Workify\backend\src\main\java\com\workify\backend\repository\RecordingRepository.java
 D:\HoaiNhan\Code\Code_java\Workify\backend\src\main\java\com\workify\backend\repository\RevokedTokenRepository.java
@@ -73,8 +77,10 @@ D:\HoaiNhan\Code\Code_java\Workify\backend\src\main\java\com\workify\backend\ser
 D:\HoaiNhan\Code\Code_java\Workify\backend\src\main\java\com\workify\backend\service\GoogleOAuthService.java
 D:\HoaiNhan\Code\Code_java\Workify\backend\src\main\java\com\workify\backend\service\JwtService.java
 D:\HoaiNhan\Code\Code_java\Workify\backend\src\main\java\com\workify\backend\service\NoteService.java
+D:\HoaiNhan\Code\Code_java\Workify\backend\src\main\java\com\workify\backend\service\NotificationService.java
 D:\HoaiNhan\Code\Code_java\Workify\backend\src\main\java\com\workify\backend\service\RecordingService.java
 D:\HoaiNhan\Code\Code_java\Workify\backend\src\main\java\com\workify\backend\service\TagService.java
+D:\HoaiNhan\Code\Code_java\Workify\backend\src\main\java\com\workify\backend\service\TaskNotificationScheduler.java
 D:\HoaiNhan\Code\Code_java\Workify\backend\src\main\java\com\workify\backend\service\TaskService.java
 D:\HoaiNhan\Code\Code_java\Workify\backend\src\main\java\com\workify\backend\service\TokenBlacklistService.java
 D:\HoaiNhan\Code\Code_java\Workify\backend\src\main\java\com\workify\backend\service\UserService.java

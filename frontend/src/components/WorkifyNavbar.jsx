@@ -1,6 +1,7 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { useAuthContext } from '../context/AuthContext'
+import NotificationBell from './NotificationBell'
 
 const WorkifyNavbar = () => {
   const { user, logout } = useAuthContext()
@@ -18,8 +19,9 @@ const WorkifyNavbar = () => {
           Workify
         </Link>
         
-        <div className="navbar-nav ms-auto">
-          <div className="nav-item dropdown">
+        <div className="navbar-nav ms-auto d-flex align-items-center">
+          <NotificationBell />
+          <div className="nav-item dropdown ms-3">
             <a
               className="nav-link dropdown-toggle d-flex align-items-center"
               href="#"

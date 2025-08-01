@@ -20,6 +20,9 @@ public interface TaskRepository extends MongoRepository<Task, String> {
         // Find tasks by user ID and status
         List<Task> findByUserIdAndStatus(String userId, Task.TaskStatus status);
 
+        // Find tasks by user ID and NOT status (for notification checking)
+        List<Task> findByUserIdAndStatusNot(String userId, Task.TaskStatus status);
+
         // Find tasks by user ID and priority
         List<Task> findByUserIdAndPriority(String userId, Task.TaskPriority priority);
 

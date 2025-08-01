@@ -54,6 +54,12 @@ const WorkifySidebar = () => {
       description: 'Quản lý bản ghi âm'
     },
     {
+      path: '/workify/notifications',
+      icon: 'bi-bell',
+      label: 'Thông báo',
+      description: 'Xem thông báo'
+    },
+    {
       path: '/workify/calendar',
       icon: 'bi-calendar3',
       label: 'Lịch',

@@ -357,19 +357,40 @@ public class Task {
      * Check if task is overdue
      */
     public boolean isOverdue() {
-        return this.dueDate != null &&
-                this.dueDate.isBefore(LocalDateTime.now()) &&
-                this.status != TaskStatus.COMPLETED;
+        if (this.dueDate == null || this.status == TaskStatus.COMPLETED) {
+            return false;
+        }
+        try {
+            return this.dueDate.isBefore(LocalDateTime.now());
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     /**
      * Check if task is due soon (within next 24 hours)
      */
     public boolean isDueSoon() {
-        return this.dueDate != null &&
-                this.dueDate.isAfter(LocalDateTime.now()) &&
-                this.dueDate.isBefore(LocalDateTime.now().plusDays(1)) &&
-                this.status != TaskStatus.COMPLETED;
+        if (this.dueDate == null || this.status == TaskStatus.COMPLETED) {
+            return false;
+        }
+        try {
+            LocalDateTime now = LocalDateTime.now();
+            // Debug logging
+            System.out.println("DEBUG isDueSoon - Task: " + this.title);
+            System.out.println("  DueDate: " + this.dueDate);
+            System.out.println("  Now: " + now);
+            System.out.println("  24h later: " + now.plusDays(1));
+            System.out.println("  IsAfter now: " + this.dueDate.isAfter(now));
+            System.out.println("  IsBefore 24h: " + this.dueDate.isBefore(now.plusDays(1)));
+            
+            boolean result = this.dueDate.isAfter(now) && this.dueDate.isBefore(now.plusDays(1));
+            System.out.println("  Result: " + result);
+            return result;
+        } catch (Exception e) {
+            System.out.println("DEBUG isDueSoon ERROR: " + e.getMessage());
+            return false;
+        }
     }
 
     /**
