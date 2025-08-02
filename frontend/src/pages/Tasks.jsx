@@ -4,6 +4,8 @@ import TaskList from '../components/TaskList'
 import CreateTaskModal from '../components/CreateTaskModal'
 import EditTaskModal from '../components/EditTaskModal'
 import ConfirmDeleteModal from '../components/ConfirmDeleteModal'
+import ShareToWorkspaceModal from '../components/ShareToWorkspaceModal'
+import AssignTaskModal from '../components/AssignTaskModal'
 import taskService from '../services/taskService'
 import tagService from '../services/tagService'
 
@@ -20,6 +22,12 @@ const Tasks = () => {
   const [selectedTask, setSelectedTask] = useState(null)
   const [deleteLoading, setDeleteLoading] = useState(false)
   const [availableTags, setAvailableTags] = useState([])
+
+  // Workspace sharing states
+  const [showShareModal, setShowShareModal] = useState(false)
+  const [showAssignModal, setShowAssignModal] = useState(false)
+  const [selectedTaskForShare, setSelectedTaskForShare] = useState(null)
+  const [selectedTaskForAssign, setSelectedTaskForAssign] = useState(null)
 
   // Load available tags
   useEffect(() => {
@@ -170,6 +178,29 @@ const Tasks = () => {
     } finally {
       setDeleteLoading(false)
     }
+  }
+
+  // Workspace sharing handlers
+  const handleShareTask = (task) => {
+    setSelectedTaskForShare(task)
+    setShowShareModal(true)
+  }
+
+  const handleTaskShared = () => {
+    // Refresh tasks list after sharing
+    refreshData()
+    alert('Task đã được chia sẻ thành công!')
+  }
+
+  const handleAssignTask = (task) => {
+    setSelectedTaskForAssign(task)
+    setShowAssignModal(true)
+  }
+
+  const handleTaskAssigned = () => {
+    // Refresh tasks list after assigning
+    refreshData()
+    alert('Task đã được assign thành công!')
   }
 
   return (
@@ -385,6 +416,8 @@ const Tasks = () => {
                 onTaskUpdate={updateTask}
                 onTaskEdit={handleEditTask}
                 onTaskDelete={handleDeleteClick}
+                onTaskShare={handleShareTask}
+                onTaskAssign={handleAssignTask}
                 onRefresh={handleRefresh}
                 onCreateTask={() => setShowCreateModal(true)}
                 availableTags={availableTags}
@@ -420,6 +453,29 @@ const Tasks = () => {
         onConfirm={handleConfirmDelete}
         taskTitle={selectedTask?.title || ''}
         loading={deleteLoading}
+      />
+
+      <ShareToWorkspaceModal
+        show={showShareModal}
+        onHide={() => {
+          setShowShareModal(false)
+          setSelectedTaskForShare(null)
+        }}
+        itemType="task"
+        itemId={selectedTaskForShare?.id}
+        itemTitle={selectedTaskForShare?.title}
+        onShared={handleTaskShared}
+      />
+
+      <AssignTaskModal
+        show={showAssignModal}
+        onHide={() => {
+          setShowAssignModal(false)
+          setSelectedTaskForAssign(null)
+        }}
+        taskId={selectedTaskForAssign?.id}
+        taskTitle={selectedTaskForAssign?.title}
+        onAssigned={handleTaskAssigned}
       />
     </div>
   )

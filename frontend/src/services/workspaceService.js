@@ -315,6 +315,74 @@ const workspaceService = {
       console.error('Error leaving workspace:', error);
       throw error;
     }
+  },
+
+  // ========== NEW WORKSPACE SHARING FEATURES ==========
+
+  // Get workspace statistics
+  getWorkspaceStats: async (workspaceId) => {
+    try {
+      if (!isAuthenticated()) {
+        throw new Error('User not authenticated');
+      }
+
+      const token = getAuthToken();
+      const response = await fetch(`${API_BASE_URL}/workspaces/${workspaceId}/stats`, {
+        method: 'GET',
+        headers: {
+          'Authorization': token,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.status === 401) {
+        localStorage.removeItem(TOKEN_KEY);
+        throw new Error('Authentication expired');
+      }
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      return result.success ? result.data : null;
+    } catch (error) {
+      console.error('Error getting workspace stats:', error);
+      throw error;
+    }
+  },
+
+  // Get workspace activity summary
+  getWorkspaceActivitySummary: async (workspaceId) => {
+    try {
+      if (!isAuthenticated()) {
+        throw new Error('User not authenticated');
+      }
+
+      const token = getAuthToken();
+      const response = await fetch(`${API_BASE_URL}/workspaces/${workspaceId}/activity-summary`, {
+        method: 'GET',
+        headers: {
+          'Authorization': token,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.status === 401) {
+        localStorage.removeItem(TOKEN_KEY);
+        throw new Error('Authentication expired');
+      }
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      return result.success ? result.data : null;
+    } catch (error) {
+      console.error('Error getting workspace activity summary:', error);
+      throw error;
+    }
   }
 };
 

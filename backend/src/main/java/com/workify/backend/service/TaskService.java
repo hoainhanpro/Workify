@@ -1,6 +1,11 @@
 package com.workify.backend.service;
 
 import com.workify.backend.model.Task;
+import com.workify.backend.model.SharedPermissions;
+import com.workify.backend.model.User;
+import com.workify.backend.model.Workspace;
+import com.workify.backend.model.WorkspaceMember;
+import com.workify.backend.model.WorkspaceRole;
 import com.workify.backend.repository.TaskRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -11,6 +16,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class TaskService {
@@ -23,6 +29,9 @@ public class TaskService {
 
     @Autowired
     private GoogleCalendarService googleCalendarService;
+
+    @Autowired
+    private UserService userService;
 
     // Get all tasks for a user
     public List<Task> getAllTasksByUserId(String userId) {
@@ -855,6 +864,177 @@ public class TaskService {
         task.setWorkspaceId(null);
         task.setIsSharedToWorkspace(false);
         task.setAssignedToUserId(null); // Clear assignment when unsharing
+
+        return taskRepository.save(task);
+    }
+
+    /**
+     * Share task to workspace với permissions chi tiết
+     */
+    public Task shareTaskToWorkspaceWithPermissions(String taskId, String workspaceId, String username,
+            List<String> viewUserIds, List<String> editUserIds, Boolean shareToAllMembers, String defaultPermission) {
+        // Convert username thành userId (ObjectId)
+        Optional<User> currentUserOpt = userService.findByUsername(username);
+        if (currentUserOpt.isEmpty()) {
+            throw new IllegalArgumentException("User not found: " + username);
+        }
+        String userId = currentUserOpt.get().getId();
+        
+        // Kiểm tra task có tồn tại không
+        Optional<Task> taskOpt = taskRepository.findById(taskId);
+        if (taskOpt.isEmpty()) {
+            throw new IllegalArgumentException("Task not found");
+        }
+
+        Task task = taskOpt.get();
+
+        // Kiểm tra quyền share: Author hoặc Owner/Admin của workspace
+        boolean canShare = task.getUserId().equals(userId);
+        if (!canShare) {
+            // Kiểm tra workspace có tồn tại không
+            Optional<Workspace> workspaceOpt = workspaceService.getWorkspaceById(workspaceId);
+            if (workspaceOpt.isPresent()) {
+                Workspace workspace = workspaceOpt.get();
+
+                // Kiểm tra user có phải Owner của workspace không
+                if (workspace.getOwnerId().equals(userId)) {
+                    canShare = true;
+                } else {
+                    // Kiểm tra user có phải Admin trong members không
+                    Optional<WorkspaceMember> memberOpt = workspace.findMemberByUserId(userId);
+                    if (memberOpt.isPresent()) {
+                        WorkspaceRole role = memberOpt.get().getRole();
+                        canShare = role == WorkspaceRole.ADMIN;
+                    }
+                }
+            }
+        }
+
+        if (!canShare) {
+            throw new SecurityException("Only task author or workspace owner/admin can share task to workspace");
+        }
+
+        task.shareToWorkspace(workspaceId);
+
+        // Thiết lập permissions chi tiết
+        if (task.getSharedPermissions() == null) {
+            task.setSharedPermissions(new SharedPermissions());
+        }
+
+        // Clear existing permissions
+        task.getSharedPermissions().getCanView().clear();
+        task.getSharedPermissions().getCanEdit().clear();
+
+        // Lấy workspace để filter Owner/Admin
+        Optional<Workspace> workspaceForFilter = workspaceService.getWorkspaceById(workspaceId);
+        final List<String> ownerAdminIds = new ArrayList<>();
+        if (workspaceForFilter.isPresent()) {
+            Workspace workspace = workspaceForFilter.get();
+            // Thêm Owner vào danh sách ownerAdminIds
+            ownerAdminIds.add(workspace.getOwnerId());
+            // Thêm Admin members vào danh sách
+            workspace.getMembers().stream()
+                    .filter(member -> member.getRole() == WorkspaceRole.ADMIN)
+                    .map(WorkspaceMember::getUserId)
+                    .forEach(ownerAdminIds::add);
+        }
+
+        // Add view permissions (exclude Owner/Admin - they have full access)
+        if (viewUserIds != null) {
+            viewUserIds.stream()
+                    .filter(uid -> !ownerAdminIds.contains(uid))
+                    .forEach(uid -> task.getSharedPermissions().addViewPermission(uid));
+        }
+
+        // Add edit permissions (exclude Owner/Admin - they have full access)
+        if (editUserIds != null) {
+            editUserIds.stream()
+                    .filter(uid -> !ownerAdminIds.contains(uid))
+                    .forEach(uid -> task.getSharedPermissions().addEditPermission(uid));
+        }
+
+        // Handle share to all members
+        if (shareToAllMembers != null && shareToAllMembers) {
+            if (workspaceForFilter.isPresent()) {
+                List<WorkspaceMember> allMembers = workspaceForFilter.get().getActiveMembers();
+                for (WorkspaceMember member : allMembers) {
+                    // Skip Admin (they already have full access, Owner is already excluded)
+                    if (member.getRole() == WorkspaceRole.ADMIN) {
+                        continue;
+                    }
+
+                    // Add permissions based on defaultPermission
+                    if ("edit".equals(defaultPermission)) {
+                        task.getSharedPermissions().addEditPermission(member.getUserId());
+                    } else {
+                        task.getSharedPermissions().addViewPermission(member.getUserId());
+                    }
+                }
+            }
+        }
+
+        return taskRepository.save(task);
+    }
+
+    /**
+     * Update task permissions
+     */
+    public Task updateTaskPermissions(String taskId, String userId, List<String> viewUserIds,
+            List<String> editUserIds) {
+        Optional<Task> taskOpt = taskRepository.findByIdAndUserHasAccess(taskId, userId);
+        if (taskOpt.isEmpty()) {
+            throw new IllegalArgumentException("Task not found or you don't have access");
+        }
+
+        Task task = taskOpt.get();
+
+        // Chỉ owner của task mới update permissions được
+        if (!task.getUserId().equals(userId)) {
+            throw new SecurityException("Only task owner can update permissions");
+        }
+
+        if (task.getSharedPermissions() == null) {
+            task.setSharedPermissions(new SharedPermissions());
+        }
+
+        // Clear existing permissions
+        task.getSharedPermissions().getCanView().clear();
+        task.getSharedPermissions().getCanEdit().clear();
+
+        // Add new permissions
+        if (viewUserIds != null) {
+            viewUserIds.forEach(uid -> task.getSharedPermissions().addViewPermission(uid));
+        }
+
+        if (editUserIds != null) {
+            editUserIds.forEach(uid -> task.getSharedPermissions().addEditPermission(uid));
+        }
+
+        return taskRepository.save(task);
+    }
+
+    /**
+     * Assign task to user với details
+     */
+    public Task assignTaskToUserDetailed(String taskId, String assigneeUserId, String requestUserId,
+            String message, Boolean notifyAssignee) {
+        Optional<Task> taskOpt = taskRepository.findByIdAndUserHasAccess(taskId, requestUserId);
+        if (taskOpt.isEmpty()) {
+            throw new IllegalArgumentException("Task not found or you don't have permission");
+        }
+
+        Task task = taskOpt.get();
+
+        // Chỉ owner hoặc người có edit permission mới assign được
+        if (!task.canUserEdit(requestUserId)) {
+            throw new SecurityException("You don't have permission to assign this task");
+        }
+
+        task.assignToUser(assigneeUserId);
+
+        // TODO: Send notification if notifyAssignee is true
+        // TODO: Log assignment message
+        // Có thể implement notification service sau
 
         return taskRepository.save(task);
     }

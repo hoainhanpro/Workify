@@ -476,19 +476,15 @@ const taskService = {
     }
   },
 
-  // Share task to workspace
+  // Share task to workspace (existing)
   shareTaskToWorkspace: async (taskId, workspaceId, permissions) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/tasks/${taskId}/share-to-workspace`, {
+      const response = await fetch(`${API_BASE_URL}/tasks/${taskId}/share-to-workspace/${workspaceId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': getAuthToken(),
         },
-        body: JSON.stringify({
-          workspaceId,
-          permissions
-        }),
       });
 
       if (!response.ok) {
@@ -502,11 +498,164 @@ const taskService = {
     }
   },
 
-  // Unshare task from workspace
+  // Share task to workspace with detailed permissions (NEW)
+  shareTaskToWorkspaceDetailed: async (taskId, shareRequest) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/tasks/${taskId}/share-to-workspace-detailed`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': getAuthToken(),
+        },
+        body: JSON.stringify(shareRequest),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error sharing task with detailed permissions:', error);
+      throw error;
+    }
+  },
+
+  // Update task permissions (NEW)
+  updateTaskPermissions: async (taskId, permissionsRequest) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/tasks/${taskId}/permissions`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': getAuthToken(),
+        },
+        body: JSON.stringify(permissionsRequest),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error updating task permissions:', error);
+      throw error;
+    }
+  },
+
+  // Assign task to user (existing basic)
+  assignTaskToUser: async (taskId, assigneeId) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/tasks/${taskId}/assign/${assigneeId}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': getAuthToken(),
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error assigning task:', error);
+      throw error;
+    }
+  },
+
+  // Assign task with detailed info (NEW)
+  assignTaskDetailed: async (taskId, assignRequest) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/tasks/${taskId}/assign-detailed`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': getAuthToken(),
+        },
+        body: JSON.stringify(assignRequest),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error assigning task with details:', error);
+      throw error;
+    }
+  },
+
+  // Get workspace tasks (NEW)
+  getWorkspaceTasks: async (workspaceId) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/tasks/workspace/${workspaceId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': getAuthToken(),
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error getting workspace tasks:', error);
+      throw error;
+    }
+  },
+
+  // Get workspace tasks with detailed info (NEW)
+  getWorkspaceTasksDetailed: async (workspaceId) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/tasks/workspace/${workspaceId}/detailed`, {
+        method: 'GET',
+        headers: {
+          'Authorization': getAuthToken(),
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error getting detailed workspace tasks:', error);
+      throw error;
+    }
+  },
+
+  // Get assigned tasks in workspace (NEW)
+  getAssignedTasksInWorkspace: async (workspaceId) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/tasks/workspace/${workspaceId}/assigned-to-me`, {
+        method: 'GET',
+        headers: {
+          'Authorization': getAuthToken(),
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error getting assigned tasks:', error);
+      throw error;
+    }
+  },
+
+  // Unshare task from workspace (existing)
   unshareTaskFromWorkspace: async (taskId) => {
     try {
       const response = await fetch(`${API_BASE_URL}/tasks/${taskId}/unshare-from-workspace`, {
-        method: 'POST',
+        method: 'DELETE',
         headers: {
           'Authorization': getAuthToken(),
         },
@@ -523,6 +672,7 @@ const taskService = {
     }
   },
 
+  // LEGACY - Remove old method, replaced by assignTaskToUser
   // Add edit permission for task
   addTaskEditPermission: async (taskId, targetUserId) => {
     try {

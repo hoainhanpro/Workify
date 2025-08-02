@@ -9,6 +9,7 @@ import TagDisplay from '../components/TagDisplay'
 import FileUpload from '../components/FileUpload'
 import FileList from '../components/FileList'
 import VersionHistory from '../components/VersionHistory'
+import ShareToWorkspaceModal from '../components/ShareToWorkspaceModal'
 import '../styles/TagSelector.css'
 
 const Notes = () => {
@@ -39,6 +40,10 @@ const Notes = () => {
   const [showVersionHistory, setShowVersionHistory] = useState(false)
   const [versionHistoryNoteId, setVersionHistoryNoteId] = useState(null)
   const [versionCounts, setVersionCounts] = useState({}) // noteId -> version count
+
+  // Workspace sharing states
+  const [showShareModal, setShowShareModal] = useState(false)
+  const [selectedNoteForShare, setSelectedNoteForShare] = useState(null)
 
   // Load notes khi component mount
   useEffect(() => {
@@ -379,6 +384,17 @@ const Notes = () => {
     setVersionHistoryNoteId(null)
   }
 
+  // Workspace sharing handlers
+  const handleShareNote = (note) => {
+    setSelectedNoteForShare(note)
+    setShowShareModal(true)
+  }
+
+  const handleNoteShared = () => {
+    // Refresh notes if needed
+    loadNotes()
+  }
+
   // GĐ6: Xử lý filter
   const handleFilterChange = (type, tagIds = []) => {
     setFilterType(type)
@@ -610,6 +626,14 @@ const Notes = () => {
                               onClick={() => openEditModal(note)}
                             >
                               <i className="bi bi-pencil me-2"></i>Chỉnh sửa
+                            </button>
+                          </li>
+                          <li>
+                            <button 
+                              className="dropdown-item"
+                              onClick={() => handleShareNote(note)}
+                            >
+                              <i className="bi bi-share me-2"></i>Chia sẻ vào Workspace
                             </button>
                           </li>
                           <li>
@@ -910,6 +934,18 @@ const Notes = () => {
           noteId={versionHistoryNoteId}
           onRestore={handleVersionRestore}
           onClose={handleCloseVersionHistory}
+        />
+      )}
+
+      {/* Workspace Sharing Modal */}
+      {selectedNoteForShare && (
+        <ShareToWorkspaceModal
+          show={showShareModal}
+          onHide={() => setShowShareModal(false)}
+          itemType="note"
+          itemId={selectedNoteForShare.id}
+          itemTitle={selectedNoteForShare.title}
+          onShared={handleNoteShared}
         />
       )}
     </div>

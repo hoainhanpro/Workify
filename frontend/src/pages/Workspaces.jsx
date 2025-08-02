@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import workspaceService from '../services/workspaceService';
 import workspaceInvitationService from '../services/workspaceInvitationService';
+import WorkspaceStatsCard from '../components/WorkspaceStatsCard';
+import WorkspaceTaskList from '../components/WorkspaceTaskList';
+import WorkspaceNoteList from '../components/WorkspaceNoteList';
 
 const Workspaces = () => {
   const [workspaces, setWorkspaces] = useState([]);
@@ -11,6 +14,10 @@ const Workspaces = () => {
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [selectedWorkspace, setSelectedWorkspace] = useState(null);
   const [workspaceMembers, setWorkspaceMembers] = useState([]);
+  
+  // Workspace detail view states
+  const [selectedWorkspaceForDetail, setSelectedWorkspaceForDetail] = useState(null);
+  const [showWorkspaceDetail, setShowWorkspaceDetail] = useState(false);
 
   // Form states
   const [createForm, setCreateForm] = useState({
@@ -147,6 +154,16 @@ const Workspaces = () => {
     }
   };
 
+  const handleViewWorkspaceDetail = (workspace) => {
+    setSelectedWorkspaceForDetail(workspace);
+    setShowWorkspaceDetail(true);
+  };
+
+  const handleBackToWorkspaceList = () => {
+    setShowWorkspaceDetail(false);
+    setSelectedWorkspaceForDetail(null);
+  };
+
   if (loading) {
     console.log('🔄 Workspaces component is loading...');
     return (
@@ -166,17 +183,96 @@ const Workspaces = () => {
 
   return (
     <div className="container-fluid">
-      <div className="row">
-        <div className="col-12">
-          <div className="d-flex justify-content-between align-items-center mb-4">
-            <h2>Quản lý Nhóm</h2>
-            <button 
-              className="btn btn-primary" 
-              onClick={() => setShowCreateModal(true)}
-            >
-              <i className="bi bi-plus"></i> Tạo Nhóm
-            </button>
+      {showWorkspaceDetail && selectedWorkspaceForDetail ? (
+        // Workspace Detail View
+        <div className="row">
+          <div className="col-12">
+            <div className="d-flex justify-content-between align-items-center mb-4">
+              <div>
+                <button 
+                  className="btn btn-outline-secondary me-3"
+                  onClick={handleBackToWorkspaceList}
+                >
+                  <i className="bi bi-arrow-left me-1"></i>
+                  Quay lại
+                </button>
+                <h2 className="d-inline">
+                  <i className="bi bi-building me-2"></i>
+                  {selectedWorkspaceForDetail.name}
+                </h2>
+              </div>
+            </div>
+
+            {selectedWorkspaceForDetail.description && (
+              <div className="alert alert-info">
+                <i className="bi bi-info-circle me-2"></i>
+                {selectedWorkspaceForDetail.description}
+              </div>
+            )}
+
+            {/* Workspace Stats */}
+            <div className="row mb-4">
+              <div className="col-12">
+                <WorkspaceStatsCard 
+                  workspaceId={selectedWorkspaceForDetail.id}
+                  workspaceName={selectedWorkspaceForDetail.name}
+                />
+              </div>
+            </div>
+
+            {/* Tasks and Notes */}
+            <div className="row">
+              <div className="col-md-6 mb-4">
+                <div className="card">
+                  <div className="card-header">
+                    <h5 className="mb-0">
+                      <i className="bi bi-list-task me-2"></i>
+                      Tasks trong Workspace
+                    </h5>
+                  </div>
+                  <div className="card-body">
+                    <WorkspaceTaskList 
+                      workspaceId={selectedWorkspaceForDetail.id}
+                      showActions={true}
+                      limit={10}
+                    />
+                  </div>
+                </div>
+              </div>
+              
+              <div className="col-md-6 mb-4">
+                <div className="card">
+                  <div className="card-header">
+                    <h5 className="mb-0">
+                      <i className="bi bi-journal-text me-2"></i>
+                      Notes trong Workspace
+                    </h5>
+                  </div>
+                  <div className="card-body">
+                    <WorkspaceNoteList 
+                      workspaceId={selectedWorkspaceForDetail.id}
+                      showActions={true}
+                      limit={10}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
+        </div>
+      ) : (
+        // Workspace List View
+        <div className="row">
+          <div className="col-12">
+            <div className="d-flex justify-content-between align-items-center mb-4">
+              <h2>Quản lý Nhóm</h2>
+              <button 
+                className="btn btn-primary" 
+                onClick={() => setShowCreateModal(true)}
+              >
+                <i className="bi bi-plus"></i> Tạo Nhóm
+              </button>
+            </div>
 
           {error && (
             <div className="alert alert-danger alert-dismissible fade show" role="alert">
@@ -252,6 +348,13 @@ const Workspaces = () => {
                     <div className="card-footer">
                       <div className="btn-group w-100" role="group">
                         <button 
+                          className="btn btn-outline-success btn-sm"
+                          onClick={() => handleViewWorkspaceDetail(workspace)}
+                        >
+                          <i className="bi bi-eye me-1"></i>
+                          Xem chi tiết
+                        </button>
+                        <button 
                           className="btn btn-outline-info btn-sm"
                           onClick={() => handleShowMembers(workspace)}
                           data-bs-toggle="modal" 
@@ -304,6 +407,7 @@ const Workspaces = () => {
           )}
         </div>
       </div>
+      )}
 
       {/* Create Workspace Modal */}
       {showCreateModal && (

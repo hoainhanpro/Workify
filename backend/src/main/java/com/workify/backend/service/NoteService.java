@@ -32,6 +32,10 @@ import com.workify.backend.model.Attachment;
 import com.workify.backend.model.Note;
 import com.workify.backend.model.NoteVersion;
 import com.workify.backend.model.SharedPermissions;
+import com.workify.backend.model.User;
+import com.workify.backend.model.Workspace;
+import com.workify.backend.model.WorkspaceMember;
+import com.workify.backend.model.WorkspaceRole;
 import com.workify.backend.repository.NoteRepository;
 
 @Service
@@ -45,6 +49,12 @@ public class NoteService {
 
     @Autowired
     private FileStorageService fileStorageService;
+
+    @Autowired
+    private WorkspaceService workspaceService;
+
+    @Autowired
+    private UserService userService;
 
     /**
      * Tạo note mới
@@ -1134,5 +1144,176 @@ public class NoteService {
         note.setSharedPermissions(null);
 
         return noteRepository.save(note);
+    }
+
+    /**
+     * Share note to workspace với permissions chi tiết
+     */
+    public Note shareNoteToWorkspaceWithPermissions(String noteId, String workspaceId, String username,
+            List<String> viewUserIds, List<String> editUserIds, Boolean shareToAllMembers, String defaultPermission) {
+        // Convert username thành userId (ObjectId)
+        Optional<User> currentUserOpt = userService.findByUsername(username);
+        if (currentUserOpt.isEmpty()) {
+            throw new IllegalArgumentException("User not found: " + username);
+        }
+        String userId = currentUserOpt.get().getId();
+        System.out.println("DEBUG: Converted username=[" + username + "] to userId=[" + userId + "]");
+        
+        // Kiểm tra note có tồn tại và user có quyền truy cập không
+        Optional<Note> noteOpt = noteRepository.findById(noteId);
+        if (noteOpt.isEmpty()) {
+            throw new IllegalArgumentException("Note not found");
+        }
+
+        Note note = noteOpt.get();
+
+        // Kiểm tra quyền share: Author hoặc Owner/Admin của workspace
+        boolean canShare = note.getAuthorId().equals(userId);
+        System.out.println("DEBUG: Note authorId=[" + note.getAuthorId() + "], userId=[" + userId + "], Is author: " + canShare);
+        
+        if (!canShare) {
+            // Kiểm tra workspace có tồn tại không
+            Optional<Workspace> workspaceOpt = workspaceService.getWorkspaceById(workspaceId);
+            System.out.println("DEBUG: WorkspaceId=[" + workspaceId + "], Workspace found: " + workspaceOpt.isPresent());
+            
+            if (workspaceOpt.isPresent()) {
+                Workspace workspace = workspaceOpt.get();
+                System.out.println("DEBUG: Workspace ownerId=[" + workspace.getOwnerId() + "], userId=[" + userId + "]");
+                System.out.println("DEBUG: String equals check: " + workspace.getOwnerId().equals(userId));
+
+                // Kiểm tra user có phải Owner của workspace không
+                if (workspace.getOwnerId().equals(userId)) {
+                    canShare = true;
+                    System.out.println("DEBUG: User is workspace owner, canShare: " + canShare);
+                } else {
+                    // Kiểm tra user có phải Admin trong members không
+                    Optional<WorkspaceMember> memberOpt = workspace.findMemberByUserId(userId);
+                    System.out.println("DEBUG: Member found: " + memberOpt.isPresent());
+                    if (memberOpt.isPresent()) {
+                        WorkspaceRole role = memberOpt.get().getRole();
+                        canShare = role == WorkspaceRole.ADMIN;
+                        System.out.println("DEBUG: Member role: " + role + ", canShare: " + canShare);
+                    }
+                }
+            }
+        }
+        
+        System.out.println("DEBUG: Final canShare result: " + canShare);
+
+        if (!canShare) {
+            throw new SecurityException("Only note author or workspace owner/admin can share note to workspace");
+        }
+
+        note.shareToWorkspace(workspaceId);
+
+        // Thiết lập permissions chi tiết
+        if (note.getSharedPermissions() == null) {
+            note.setSharedPermissions(new SharedPermissions());
+        }
+
+        // Clear existing permissions
+        note.getSharedPermissions().getCanView().clear();
+        note.getSharedPermissions().getCanEdit().clear();
+
+        // Lấy workspace để filter Owner/Admin
+        Optional<Workspace> workspaceForFilter = workspaceService.getWorkspaceById(workspaceId);
+        final List<String> ownerAdminIds = new ArrayList<>();
+        if (workspaceForFilter.isPresent()) {
+            Workspace workspace = workspaceForFilter.get();
+            // Thêm Owner vào danh sách ownerAdminIds
+            ownerAdminIds.add(workspace.getOwnerId());
+            // Thêm Admin members vào danh sách
+            workspace.getMembers().stream()
+                    .filter(member -> member.getRole() == WorkspaceRole.ADMIN)
+                    .map(WorkspaceMember::getUserId)
+                    .forEach(ownerAdminIds::add);
+        }
+
+        // Add view permissions (exclude Owner/Admin - they have full access)
+        if (viewUserIds != null) {
+            viewUserIds.stream()
+                    .filter(uid -> !ownerAdminIds.contains(uid))
+                    .forEach(uid -> note.getSharedPermissions().addViewPermission(uid));
+        }
+
+        // Add edit permissions (exclude Owner/Admin - they have full access)
+        if (editUserIds != null) {
+            editUserIds.stream()
+                    .filter(uid -> !ownerAdminIds.contains(uid))
+                    .forEach(uid -> note.getSharedPermissions().addEditPermission(uid));
+        }
+
+        // Handle share to all members
+        if (shareToAllMembers != null && shareToAllMembers) {
+            if (workspaceForFilter.isPresent()) {
+                List<WorkspaceMember> allMembers = workspaceForFilter.get().getActiveMembers();
+                for (WorkspaceMember member : allMembers) {
+                    // Skip Admin (they already have full access, Owner is already excluded)
+                    if (member.getRole() == WorkspaceRole.ADMIN) {
+                        continue;
+                    }
+
+                    // Add permissions based on defaultPermission
+                    if ("edit".equals(defaultPermission)) {
+                        note.getSharedPermissions().addEditPermission(member.getUserId());
+                    } else {
+                        note.getSharedPermissions().addViewPermission(member.getUserId());
+                    }
+                }
+            }
+        }
+
+        return noteRepository.save(note);
+    }
+
+    /**
+     * Update note permissions
+     */
+    public Note updateNotePermissions(String noteId, String userId, List<String> viewUserIds,
+            List<String> editUserIds) {
+        Optional<Note> noteOpt = noteRepository.findByIdAndUserHasAccess(noteId, userId);
+        if (noteOpt.isEmpty()) {
+            throw new IllegalArgumentException("Note not found or you don't have access");
+        }
+
+        Note note = noteOpt.get();
+
+        // Chỉ author của note mới update permissions được
+        if (!note.getAuthorId().equals(userId)) {
+            throw new SecurityException("Only note author can update permissions");
+        }
+
+        if (note.getSharedPermissions() == null) {
+            note.setSharedPermissions(new SharedPermissions());
+        }
+
+        // Clear existing permissions
+        note.getSharedPermissions().getCanView().clear();
+        note.getSharedPermissions().getCanEdit().clear();
+
+        // Add new permissions
+        if (viewUserIds != null) {
+            viewUserIds.forEach(uid -> note.getSharedPermissions().addViewPermission(uid));
+        }
+
+        if (editUserIds != null) {
+            editUserIds.forEach(uid -> note.getSharedPermissions().addEditPermission(uid));
+        }
+
+        return noteRepository.save(note);
+    }
+
+    /**
+     * Đếm notes của author trong workspace
+     */
+    public long countWorkspaceNotesByAuthor(String workspaceId, String authorId) {
+        return noteRepository.findByWorkspaceIdAndAuthorId(workspaceId, authorId).size();
+    }
+
+    /**
+     * Lấy notes của author trong workspace
+     */
+    public List<Note> getWorkspaceNotesByAuthor(String workspaceId, String authorId) {
+        return noteRepository.findByWorkspaceIdAndAuthorId(workspaceId, authorId);
     }
 }

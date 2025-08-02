@@ -2,6 +2,10 @@ package com.workify.backend.controller;
 
 import com.workify.backend.dto.TaskRequest;
 import com.workify.backend.dto.TaskResponse;
+import com.workify.backend.dto.ShareToWorkspaceRequest;
+import com.workify.backend.dto.UpdatePermissionsRequest;
+import com.workify.backend.dto.AssignTaskRequest;
+import com.workify.backend.dto.WorkspaceTaskResponse;
 import com.workify.backend.model.Task;
 import com.workify.backend.security.SecurityUtils;
 import com.workify.backend.service.TaskService;
@@ -961,6 +965,136 @@ public class TaskController {
         } catch (Exception e) {
             response.put("success", false);
             response.put("message", "Failed to unshare task: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    /**
+     * Chia sẻ task với permissions chi tiết
+     */
+    @PostMapping("/{taskId}/share-to-workspace-detailed")
+    public ResponseEntity<Map<String, Object>> shareTaskToWorkspaceDetailed(
+            @PathVariable String taskId,
+            @Valid @RequestBody ShareToWorkspaceRequest request) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            String userId = SecurityUtils.getCurrentUserId();
+
+            Task result = taskService.shareTaskToWorkspaceWithPermissions(
+                    taskId,
+                    request.getWorkspaceId(),
+                    userId,
+                    request.getViewUserIds(),
+                    request.getEditUserIds(),
+                    request.getShareToAllMembers(),
+                    request.getDefaultPermission());
+
+            response.put("success", true);
+            response.put("message", "Task shared to workspace with detailed permissions");
+            response.put("data", new WorkspaceTaskResponse(result, userId));
+            return ResponseEntity.ok(response);
+        } catch (SecurityException e) {
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Failed to share task: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    /**
+     * Cập nhật permissions của task trong workspace
+     */
+    @PutMapping("/{taskId}/permissions")
+    public ResponseEntity<Map<String, Object>> updateTaskPermissions(
+            @PathVariable String taskId,
+            @Valid @RequestBody UpdatePermissionsRequest request) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            String userId = SecurityUtils.getCurrentUserId();
+
+            Task result = taskService.updateTaskPermissions(
+                    taskId,
+                    userId,
+                    request.getViewUserIds(),
+                    request.getEditUserIds());
+
+            response.put("success", true);
+            response.put("message", "Task permissions updated successfully");
+            response.put("data", new WorkspaceTaskResponse(result, userId));
+            return ResponseEntity.ok(response);
+        } catch (SecurityException e) {
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Failed to update permissions: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    /**
+     * Assign task với request body chi tiết
+     */
+    @PostMapping("/{taskId}/assign-detailed")
+    public ResponseEntity<Map<String, Object>> assignTaskDetailed(
+            @PathVariable String taskId,
+            @Valid @RequestBody AssignTaskRequest request) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            String userId = SecurityUtils.getCurrentUserId();
+
+            Task result = taskService.assignTaskToUserDetailed(
+                    taskId,
+                    request.getAssigneeUserId(),
+                    userId,
+                    request.getMessage(),
+                    request.getNotifyAssignee());
+
+            response.put("success", true);
+            response.put("message", "Task assigned successfully");
+            response.put("data", new WorkspaceTaskResponse(result, userId));
+            return ResponseEntity.ok(response);
+        } catch (SecurityException e) {
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Failed to assign task: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    /**
+     * Lấy workspace tasks với response chi tiết
+     */
+    @GetMapping("/workspace/{workspaceId}/detailed")
+    public ResponseEntity<Map<String, Object>> getWorkspaceTasksDetailed(@PathVariable String workspaceId) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            String userId = SecurityUtils.getCurrentUserId();
+
+            List<Task> tasks = taskService.getWorkspaceTasksForUser(workspaceId, userId);
+            List<WorkspaceTaskResponse> taskResponses = tasks.stream()
+                    .map(task -> new WorkspaceTaskResponse(task, userId))
+                    .collect(Collectors.toList());
+
+            response.put("success", true);
+            response.put("data", taskResponses);
+            response.put("count", taskResponses.size());
+            return ResponseEntity.ok(response);
+
+        } catch (SecurityException e) {
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Failed to retrieve workspace tasks: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }

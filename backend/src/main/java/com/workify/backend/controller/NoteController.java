@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -25,6 +26,9 @@ import org.springframework.web.multipart.MultipartFile;
 import com.workify.backend.dto.NoteCreateRequest;
 import com.workify.backend.dto.NoteResponse;
 import com.workify.backend.dto.NoteUpdateRequest;
+import com.workify.backend.dto.ShareToWorkspaceRequest;
+import com.workify.backend.dto.UpdatePermissionsRequest;
+import com.workify.backend.dto.WorkspaceNoteResponse;
 import com.workify.backend.dto.TagResponse;
 import com.workify.backend.model.Attachment;
 import com.workify.backend.model.Note;
@@ -976,6 +980,107 @@ public class NoteController {
         } catch (Exception e) {
             response.put("success", false);
             response.put("message", "Failed to unshare note: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    /**
+     * Chia sẻ note với permissions chi tiết
+     */
+    @PostMapping("/{noteId}/share-to-workspace-detailed")
+    public ResponseEntity<Map<String, Object>> shareNoteToWorkspaceDetailed(
+            @PathVariable String noteId,
+            @Valid @RequestBody ShareToWorkspaceRequest request) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            String username = SecurityUtils.getCurrentUserId(); // This is actually username from JWT
+            System.out.println("CONTROLLER DEBUG: username from SecurityUtils=[" + username + "], workspaceId=[" + request.getWorkspaceId() + "], noteId=[" + noteId + "]");
+
+            Note result = noteService.shareNoteToWorkspaceWithPermissions(
+                    noteId,
+                    request.getWorkspaceId(),
+                    username, // Pass username, service will convert to userId
+                    request.getViewUserIds(),
+                    request.getEditUserIds(),
+                    request.getShareToAllMembers(),
+                    request.getDefaultPermission());
+
+            // Get userId for response
+            String userId = result.getAuthorId(); // Use note author as current user for response
+
+            response.put("success", true);
+            response.put("message", "Note shared to workspace with detailed permissions");
+            response.put("data", new WorkspaceNoteResponse(result, userId));
+            return ResponseEntity.ok(response);
+        } catch (SecurityException e) {
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Failed to share note: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    /**
+     * Cập nhật permissions của note trong workspace
+     */
+    @PutMapping("/{noteId}/permissions")
+    public ResponseEntity<Map<String, Object>> updateNotePermissions(
+            @PathVariable String noteId,
+            @Valid @RequestBody UpdatePermissionsRequest request) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            String userId = SecurityUtils.getCurrentUserId();
+
+            Note result = noteService.updateNotePermissions(
+                    noteId,
+                    userId,
+                    request.getViewUserIds(),
+                    request.getEditUserIds());
+
+            response.put("success", true);
+            response.put("message", "Note permissions updated successfully");
+            response.put("data", new WorkspaceNoteResponse(result, userId));
+            return ResponseEntity.ok(response);
+        } catch (SecurityException e) {
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Failed to update permissions: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    /**
+     * Lấy workspace notes với response chi tiết
+     */
+    @GetMapping("/workspace/{workspaceId}/detailed")
+    public ResponseEntity<Map<String, Object>> getWorkspaceNotesDetailed(@PathVariable String workspaceId) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            String userId = SecurityUtils.getCurrentUserId();
+
+            List<Note> notes = noteService.getWorkspaceNotesForUser(workspaceId, userId);
+            List<WorkspaceNoteResponse> noteResponses = notes.stream()
+                    .map(note -> new WorkspaceNoteResponse(note, userId, true)) // List view
+                    .collect(Collectors.toList());
+
+            response.put("success", true);
+            response.put("data", noteResponses);
+            response.put("count", noteResponses.size());
+            return ResponseEntity.ok(response);
+
+        } catch (SecurityException e) {
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Failed to retrieve workspace notes: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }

@@ -17,24 +17,24 @@ const WorkifySidebar = () => {
       label: 'Hộp thư đến',
       description: 'Quản lý email'
     },
-    {
-      path: '/workify/meetings',
-      icon: 'bi-camera-video',
-      label: 'Cuộc họp',
-      description: 'Quản lý cuộc họp'
-    },
+    // {
+    //   path: '/workify/meetings',
+    //   icon: 'bi-camera-video',
+    //   label: 'Cuộc họp',
+    //   description: 'Quản lý cuộc họp'
+    // },
     {
       path: '/workify/tags',
       icon: 'bi-tags',
       label: 'Tags',
       description: 'Quản lý nhãn'
     },
-    {
-      path: '/workify/templates',
-      icon: 'bi-layout-text-window-reverse',
-      label: 'Mẫu thiết kế',
-      description: 'Quản lý template'
-    },
+    // {
+    //   path: '/workify/templates',
+    //   icon: 'bi-layout-text-window-reverse',
+    //   label: 'Mẫu thiết kế',
+    //   description: 'Quản lý template'
+    // },
     {
       path: '/workify/tasks',
       icon: 'bi-check2-square',

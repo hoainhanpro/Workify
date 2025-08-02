@@ -1,11 +1,18 @@
 import React, { useState } from 'react'
 import SubTaskList from './SubTaskList'
 import taskService from '../services/taskService'
+import ShareToWorkspaceModal from './ShareToWorkspaceModal'
+import AssignTaskModal from './AssignTaskModal'
 import './TaskList.css'
 
-const TaskList = ({ tasks, loading, error, showActions = false, onTaskUpdate = null, onTaskEdit = null, onTaskDelete = null, onRefresh = null, onCreateTask = null, availableTags = [] }) => {
+const TaskList = ({ tasks, loading, error, showActions = false, onTaskUpdate = null, onTaskEdit = null, onTaskDelete = null, onRefresh = null, onCreateTask = null, availableTags = [], onTaskShare = null, onTaskAssign = null }) => {
   // State to track which tasks have expanded subtasks
   const [expandedTasks, setExpandedTasks] = useState(new Set())
+  
+  // Workspace sharing modal states
+  const [showShareModal, setShowShareModal] = useState(false)
+  const [showAssignModal, setShowAssignModal] = useState(false)
+  const [selectedTask, setSelectedTask] = useState(null)
 
   // Toggle expand/collapse for a specific task
   const toggleSubTasks = (taskId) => {
@@ -98,6 +105,30 @@ const TaskList = ({ tasks, loading, error, showActions = false, onTaskUpdate = n
   const handleDeleteTask = async (task) => {
     if (onTaskDelete) {
       onTaskDelete(task)
+    }
+  }
+
+  const handleShareTask = (task) => {
+    if (onTaskShare) {
+      onTaskShare(task)
+    } else {
+      setSelectedTask(task)
+      setShowShareModal(true)
+    }
+  }
+
+  const handleAssignTask = (task) => {
+    if (onTaskAssign) {
+      onTaskAssign(task)
+    } else {
+      setSelectedTask(task)
+      setShowAssignModal(true)
+    }
+  }
+
+  const handleWorkspaceActionComplete = () => {
+    if (onRefresh) {
+      onRefresh()
     }
   }
 
@@ -241,11 +272,11 @@ const TaskList = ({ tasks, loading, error, showActions = false, onTaskUpdate = n
         </div>
       )} */}
       
-      <div className="list-group list-group-flush">{tasks.map((task) => (
-        <div key={task.id} className="list-group-item border-0 py-3 px-3">
+      <div className="list-group list-group-flush">{tasks.map((task, index) => (
+        <div key={task.id} className={`list-group-item border-0 py-3 px-3 ${index % 2 !== 1 ? 'bg-body-secondary' : ''}`}>
           <div className="d-flex align-items-start">
             {/* Checkbox */}
-            <div className="form-check me-3" style={{ minWidth: '20px' }}>
+            {/* <div className="form-check me-3" style={{ minWidth: '20px' }}>
               <input 
                 className="form-check-input mt-1" 
                 type="checkbox" 
@@ -258,7 +289,7 @@ const TaskList = ({ tasks, loading, error, showActions = false, onTaskUpdate = n
                 }}
                 disabled={!showActions}
               />
-            </div>
+            </div> */}
             
             {/* Main Content */}
             <div className="flex-grow-1 min-w-0">
@@ -426,6 +457,29 @@ const TaskList = ({ tasks, loading, error, showActions = false, onTaskUpdate = n
                           </button>
                         </li>
                         
+                        {/* Workspace Sharing Actions */}
+                        <li>
+                          <button 
+                            className="dropdown-item py-2" 
+                            type="button"
+                            onClick={() => handleShareTask(task)}
+                          >
+                            <i className="bi bi-share me-2"></i>
+                            Chia sẻ vào Workspace
+                          </button>
+                        </li>
+                        
+                        <li>
+                          <button 
+                            className="dropdown-item py-2" 
+                            type="button"
+                            onClick={() => handleAssignTask(task)}
+                          >
+                            <i className="bi bi-person-plus me-2"></i>
+                            Giao cho thành viên
+                          </button>
+                        </li>
+                        
                         {/* Subtask toggle option in dropdown */}
                         {task.subTasks && task.subTasks.length > 0 && (
                           <li>
@@ -521,6 +575,28 @@ const TaskList = ({ tasks, loading, error, showActions = false, onTaskUpdate = n
           )}
         </div>
       ))}
+      
+      {/* Workspace Sharing Modals */}
+      {selectedTask && (
+        <>
+          <ShareToWorkspaceModal
+            show={showShareModal}
+            onHide={() => setShowShareModal(false)}
+            itemType="task"
+            itemId={selectedTask.id}
+            itemTitle={selectedTask.title}
+            onShared={handleWorkspaceActionComplete}
+          />
+
+          <AssignTaskModal
+            show={showAssignModal}
+            onHide={() => setShowAssignModal(false)}
+            taskId={selectedTask.id}
+            taskTitle={selectedTask.title}
+            onAssigned={handleWorkspaceActionComplete}
+          />
+        </>
+      )}
       </div>
     </div>
   )

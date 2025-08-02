@@ -6,6 +6,7 @@ import TaskList from '../components/TaskList'
 import CreateTaskModal from '../components/CreateTaskModal'
 import EditTaskModal from '../components/EditTaskModal'
 import ConfirmDeleteModal from '../components/ConfirmDeleteModal'
+import WorkspaceQuickAccess from '../components/WorkspaceQuickAccess'
 
 const Dashboard = () => {
   const { user } = useAuthContext()
@@ -224,16 +225,21 @@ const Dashboard = () => {
                   <i className="bi bi-journal-plus me-2"></i>
                   Thêm ghi chú
                 </Link>
+                <Link to="/workify/workspaces" className="btn btn-outline-success">
+                  <i className="bi bi-people me-2"></i>
+                  Quản lý Workspace
+                </Link>
                 <button className="btn btn-outline-primary">
                   <i className="bi bi-calendar-plus me-2"></i>
                   Lên lịch họp
                 </button>
-                <button className="btn btn-outline-primary">
-                  <i className="bi bi-share me-2"></i>
-                  Chia sẻ dự án
-                </button>
               </div>
             </div>
+          </div>
+          
+          {/* Workspace Quick Access */}
+          <div className="mt-4">
+            <WorkspaceQuickAccess />
           </div>
         </div>
       </div>

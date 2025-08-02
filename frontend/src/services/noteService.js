@@ -538,21 +538,17 @@ const noteService = {
     }
   },
 
-  // Share note to workspace
+  // Share note to workspace (existing)
   shareNoteToWorkspace: async (noteId, workspaceId, permissions) => {
     try {
       const token = localStorage.getItem('workify_access_token')
       
-      const response = await fetch(`${API_CONFIG.baseUrl}/notes/${noteId}/share-to-workspace`, {
+      const response = await fetch(`${API_CONFIG.baseUrl}/notes/${noteId}/share-to-workspace/${workspaceId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({
-          workspaceId,
-          permissions
-        })
       })
 
       const data = await response.json()
@@ -568,13 +564,117 @@ const noteService = {
     }
   },
 
-  // Unshare note from workspace
+  // Share note to workspace with detailed permissions (NEW)
+  shareNoteToWorkspaceDetailed: async (noteId, shareRequest) => {
+    try {
+      const token = localStorage.getItem('workify_access_token')
+      
+      const response = await fetch(`${API_CONFIG.baseUrl}/notes/${noteId}/share-to-workspace-detailed`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(shareRequest)
+      })
+
+      const data = await response.json()
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'Lỗi khi chia sẻ note với permissions chi tiết')
+      }
+
+      return data
+    } catch (error) {
+      console.error('Error sharing note with detailed permissions:', error)
+      throw error
+    }
+  },
+
+  // Update note permissions (NEW)
+  updateNotePermissions: async (noteId, permissionsRequest) => {
+    try {
+      const token = localStorage.getItem('workify_access_token')
+      
+      const response = await fetch(`${API_CONFIG.baseUrl}/notes/${noteId}/permissions`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(permissionsRequest)
+      })
+
+      const data = await response.json()
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'Lỗi khi cập nhật permissions')
+      }
+
+      return data
+    } catch (error) {
+      console.error('Error updating note permissions:', error)
+      throw error
+    }
+  },
+
+  // Get workspace notes (NEW)
+  getWorkspaceNotes: async (workspaceId) => {
+    try {
+      const token = localStorage.getItem('workify_access_token')
+      
+      const response = await fetch(`${API_CONFIG.baseUrl}/notes/workspace/${workspaceId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      const data = await response.json()
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'Lỗi khi lấy notes workspace')
+      }
+
+      return data
+    } catch (error) {
+      console.error('Error getting workspace notes:', error)
+      throw error
+    }
+  },
+
+  // Get workspace notes with detailed info (NEW)
+  getWorkspaceNotesDetailed: async (workspaceId) => {
+    try {
+      const token = localStorage.getItem('workify_access_token')
+      
+      const response = await fetch(`${API_CONFIG.baseUrl}/notes/workspace/${workspaceId}/detailed`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      const data = await response.json()
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'Lỗi khi lấy detailed workspace notes')
+      }
+
+      return data
+    } catch (error) {
+      console.error('Error getting detailed workspace notes:', error)
+      throw error
+    }
+  },
+
+  // Unshare note from workspace (existing)
   unshareNoteFromWorkspace: async (noteId) => {
     try {
       const token = localStorage.getItem('workify_access_token')
       
       const response = await fetch(`${API_CONFIG.baseUrl}/notes/${noteId}/unshare-from-workspace`, {
-        method: 'POST',
+        method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -593,6 +693,7 @@ const noteService = {
     }
   },
 
+  // LEGACY - Remove old method
   // Add edit permission for note
   addNoteEditPermission: async (noteId, targetUserId) => {
     try {
