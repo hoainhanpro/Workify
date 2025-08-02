@@ -106,27 +106,92 @@ const EditTaskModal = ({ show, onHide, task, onTaskUpdated, availableTags }) => 
         status: 'TODO',
         priority: 'MEDIUM',
       }
-      setFormData(prev => ({
-        ...prev,
-        subTasks: [...prev.subTasks, newSubTask]
-      }))
+      setFormData(prev => {
+        const updatedSubTasks = [...prev.subTasks, newSubTask];
+        
+        // Auto-update main task status when adding subtask
+        let newStatus = prev.status;
+        if (updatedSubTasks.length > 0) {
+          // If we have at least one subtask, and main task is COMPLETED, set to IN_PROGRESS
+          if (prev.status === 'COMPLETED') {
+            newStatus = 'IN_PROGRESS';
+          }
+        }
+        
+        return {
+          ...prev,
+          status: newStatus,
+          subTasks: updatedSubTasks
+        };
+      });
       setSubTaskInput('')
     }
   }
 
   const handleRemoveSubTask = (subTaskId) => {
-    setFormData(prev => ({
-      ...prev,
-      subTasks: prev.subTasks.filter(subTask => subTask.id !== subTaskId)
-    }))
+    setFormData(prev => {
+      const updatedSubTasks = prev.subTasks.filter(subTask => subTask.id !== subTaskId);
+      
+      // Auto-update main task status when removing subtask
+      let newStatus = prev.status;
+      if (updatedSubTasks.length === 0) {
+        // No subtasks left, can keep current status or set to TODO
+        // Keep current status as user might have set it manually
+      } else {
+        // Recalculate status based on remaining subtasks
+        const completedSubTasks = updatedSubTasks.filter(st => st.status === 'COMPLETED');
+        const inProgressSubTasks = updatedSubTasks.filter(st => st.status === 'IN_PROGRESS');
+        
+        if (completedSubTasks.length === updatedSubTasks.length) {
+          // All remaining subtasks completed
+          newStatus = 'COMPLETED';
+        } else if (completedSubTasks.length > 0 || inProgressSubTasks.length > 0) {
+          // Some remaining subtasks in progress or completed
+          newStatus = 'IN_PROGRESS';
+        } else {
+          // All remaining subtasks are TODO
+          newStatus = 'TODO';
+        }
+      }
+      
+      return {
+        ...prev,
+        status: newStatus,
+        subTasks: updatedSubTasks
+      };
+    });
   }
 
-  const handleSubTaskChange = (subTaskId, field, value) => {    setFormData(prev => ({
-      ...prev,
-      subTasks: prev.subTasks.map(subTask =>
+  const handleSubTaskChange = (subTaskId, field, value) => {
+    setFormData(prev => {
+      const updatedSubTasks = prev.subTasks.map(subTask =>
         subTask.id === subTaskId ? { ...subTask, [field]: value } : subTask
-      )
-    }))
+      );
+      
+      // Auto-update main task status when subtask status changes
+      let newStatus = prev.status;
+      if (field === 'status' && updatedSubTasks.length > 0) {
+        const completedSubTasks = updatedSubTasks.filter(st => st.status === 'COMPLETED');
+        const inProgressSubTasks = updatedSubTasks.filter(st => st.status === 'IN_PROGRESS');
+        
+        if (completedSubTasks.length === updatedSubTasks.length) {
+          // All subtasks completed
+          newStatus = 'COMPLETED';
+        } else if (completedSubTasks.length > 0 || inProgressSubTasks.length > 0) {
+          // Some subtasks in progress or completed
+          newStatus = 'IN_PROGRESS';
+        } else {
+          // All subtasks are TODO
+          newStatus = 'TODO';
+        }
+      }
+      
+      return {
+        ...prev,
+        status: newStatus,
+        subTasks: updatedSubTasks
+      };
+    });
   }
   
   const handleSubmit = async (e) => {
@@ -298,6 +363,12 @@ const EditTaskModal = ({ show, onHide, task, onTaskUpdated, availableTags }) => 
                       <option value="IN_PROGRESS">Đang thực hiện</option>
                       <option value="COMPLETED">Hoàn thành</option>
                     </select>
+                    {formData.subTasks && formData.subTasks.length > 0 && (
+                      <div className="form-text text-info">
+                        <i className="bi bi-info-circle me-1"></i>
+                        Trạng thái sẽ được cập nhật tự động dựa trên tiến độ công việc con
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -364,7 +435,37 @@ const EditTaskModal = ({ show, onHide, task, onTaskUpdated, availableTags }) => 
               <div className="mb-3">
                 <label className="form-label">
                   Công việc con
+                  {formData.subTasks && formData.subTasks.length > 0 && (
+                    <span className="badge bg-light text-dark ms-2">
+                      {formData.subTasks.filter(st => st.status === 'COMPLETED').length}/{formData.subTasks.length}
+                    </span>
+                  )}
                 </label>
+                
+                {/* Progress bar for subtasks */}
+                {formData.subTasks && formData.subTasks.length > 0 && (
+                  <div className="mb-2">
+                    <div className="progress" style={{ height: '6px' }}>
+                      <div 
+                        className={`progress-bar ${
+                          formData.subTasks.filter(st => st.status === 'COMPLETED').length === formData.subTasks.length 
+                            ? 'bg-success' 
+                            : formData.subTasks.filter(st => st.status === 'COMPLETED').length > 0 
+                              ? 'bg-warning' 
+                              : 'bg-secondary'
+                        }`}
+                        style={{ 
+                          width: `${(formData.subTasks.filter(st => st.status === 'COMPLETED').length / formData.subTasks.length) * 100}%` 
+                        }}
+                      ></div>
+                    </div>
+                    <small className="text-muted">
+                      <i className="bi bi-graph-up me-1"></i>
+                      Tiến độ: {Math.round((formData.subTasks.filter(st => st.status === 'COMPLETED').length / formData.subTasks.length) * 100)}%
+                    </small>
+                  </div>
+                )}
+                
                 <div className="mb-2">                  <button
                     type="button"
                     className={`btn btn-sm ${showSubTasks ? 'btn-outline-secondary' : 'btn-outline-primary'}`}

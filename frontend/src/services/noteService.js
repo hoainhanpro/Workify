@@ -661,7 +661,7 @@ const noteService = {
         throw new Error(data.message || 'Lỗi khi lấy detailed workspace notes')
       }
 
-      return data
+      return data.data || [] // Return data array, not full response
     } catch (error) {
       console.error('Error getting detailed workspace notes:', error)
       throw error

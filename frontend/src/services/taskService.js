@@ -623,7 +623,8 @@ const taskService = {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      return await response.json();
+      const result = await response.json();
+      return result.data || []; // Return data array, not full response
     } catch (error) {
       console.error('Error getting detailed workspace tasks:', error);
       throw error;

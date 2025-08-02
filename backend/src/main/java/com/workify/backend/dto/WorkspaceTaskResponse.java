@@ -34,6 +34,7 @@ public class WorkspaceTaskResponse {
     private Integer subTasksCount;
     private Integer completedSubTasksCount;
     private Double completionPercentage;
+    private List<Task.SubTask> subTasks; // Add subtasks list
 
     private List<String> tags;
     private LocalDateTime dueDate;
@@ -73,6 +74,7 @@ public class WorkspaceTaskResponse {
         this.subTasksCount = task.getSubTasksCount();
         this.completedSubTasksCount = task.getCompletedSubTasksCount();
         this.completionPercentage = task.getCompletionPercentage();
+        this.subTasks = task.getSubTasks(); // Add subtasks
 
         this.tags = task.getTags();
         this.dueDate = task.getDueDate();
@@ -317,5 +319,13 @@ public class WorkspaceTaskResponse {
 
     public void setIsAssigned(Boolean isAssigned) {
         this.isAssigned = isAssigned;
+    }
+
+    public List<Task.SubTask> getSubTasks() {
+        return subTasks;
+    }
+
+    public void setSubTasks(List<Task.SubTask> subTasks) {
+        this.subTasks = subTasks;
     }
 }

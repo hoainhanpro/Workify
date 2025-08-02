@@ -24,13 +24,16 @@ const WorkspaceNoteList = ({ workspaceId, showActions = true, limit = null }) =>
       setLoading(true);
       setError(null);
 
+      console.log('🔄 Loading workspace notes for workspaceId:', workspaceId);
       const workspaceNotes = await noteService.getWorkspaceNotesDetailed(workspaceId);
+      console.log('✅ Received workspace notes:', workspaceNotes);
       
       // Apply limit if specified
       const limitedNotes = limit ? workspaceNotes.slice(0, limit) : workspaceNotes;
+      console.log('📋 Setting notes to display:', limitedNotes);
       setNotes(limitedNotes);
     } catch (error) {
-      console.error('Error loading workspace notes:', error);
+      console.error('❌ Error loading workspace notes:', error);
       setError(error.message);
     } finally {
       setLoading(false);
@@ -62,30 +65,10 @@ const WorkspaceNoteList = ({ workspaceId, showActions = true, limit = null }) =>
     });
   };
 
-  const truncateHTML = (html, maxLength = 150) => {
-    if (!html) return '';
-    
-    // Remove HTML tags for preview
-    const text = html.replace(/<[^>]*>/g, '');
-    return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
-  };
-
-  const getPermissionsBadge = (permissions) => {
-    if (!permissions) return null;
-    
-    const permissionLabels = [];
-    if (permissions.read) permissionLabels.push('Read');
-    if (permissions.write) permissionLabels.push('Write');  
-    if (permissions.delete) permissionLabels.push('Delete');
-    
-    return permissionLabels.map((label, index) => (
-      <span 
-        key={label} 
-        className={`badge me-1 ${label === 'Delete' ? 'bg-danger' : label === 'Write' ? 'bg-warning' : 'bg-info'}`}
-      >
-        {label}
-      </span>
-    ));
+  const truncateContent = (content, maxLength = 150) => {
+    if (!content) return '';
+    if (content.length <= maxLength) return content;
+    return content.substring(0, maxLength) + '...';
   };
 
   if (loading) {
@@ -111,7 +94,7 @@ const WorkspaceNoteList = ({ workspaceId, showActions = true, limit = null }) =>
   if (notes.length === 0) {
     return (
       <div className="text-center py-4">
-        <i className="bi bi-journal-x fs-1 text-muted"></i>
+        <i className="bi bi-inbox fs-1 text-muted"></i>
         <p className="text-muted mt-2">Không có note nào trong workspace này</p>
       </div>
     );
@@ -129,121 +112,153 @@ const WorkspaceNoteList = ({ workspaceId, showActions = true, limit = null }) =>
         )}
       </div>
 
-      <div className="row">
-        {notes.map((note) => (
-          <div key={note.id} className="col-md-6 col-lg-4 mb-3">
-            <div className="card h-100">
-              <div className="card-body">
-                <div className="d-flex justify-content-between align-items-start mb-2">
-                  <h6 className="card-title mb-0" title={note.title}>
-                    {note.title.length > 50 ? note.title.substring(0, 50) + '...' : note.title}
-                  </h6>
-                  {showActions && (
-                    <div className="dropdown">
-                      <button 
-                        className="btn btn-sm btn-outline-secondary dropdown-toggle"
-                        data-bs-toggle="dropdown"
-                      >
-                        <i className="bi bi-three-dots"></i>
-                      </button>
-                      <ul className="dropdown-menu">
-                        <li>
-                          <button 
-                            className="dropdown-item"
-                            onClick={() => handleShareNote(note)}
-                          >
-                            <i className="bi bi-share me-2"></i>
-                            Chia sẻ lại
-                          </button>
-                        </li>
-                        <li>
-                          <button 
-                            className="dropdown-item"
-                            onClick={() => handleEditPermissions(note)}
-                          >
-                            <i className="bi bi-shield-lock me-2"></i>
-                            Quyền truy cập
-                          </button>
-                        </li>
-                      </ul>
+      <div className="list-group list-group-flush">
+        {notes.map((note, index) => (
+          <div key={note.id} className={`list-group-item border-0 py-3 px-3 ${index % 2 !== 1 ? 'bg-body-secondary' : ''}`}>
+            <div className="d-flex align-items-start">
+              {/* Main Content */}
+              <div className="flex-grow-1 min-w-0">
+                <div className="d-flex flex-column flex-lg-row justify-content-between align-items-start gap-3">
+                  {/* Left Content */}
+                  <div className="flex-grow-1 min-w-0">
+                    <div className="mb-2">
+                      <div className="d-flex align-items-center gap-2 mb-1">
+                        <h6 className="mb-0 fw-semibold">
+                          {note.title}
+                        </h6>
+                        
+                        {/* Pin indicator */}
+                        {note.isPinned && (
+                          <span className="badge bg-warning text-dark" style={{ fontSize: '0.65rem' }}>
+                            <i className="bi bi-pin-fill me-1"></i>
+                            Ghim
+                          </span>
+                        )}
+                      </div>
+                      
+                      {/* Content preview */}
+                      {note.content && (
+                        <p className="mb-2 text-muted small lh-sm">
+                          {truncateContent(note.content)}
+                        </p>
+                      )}
+                      
+                      {/* Tags */}
+                      {note.tags && note.tags.length > 0 && (
+                        <div className="d-flex flex-wrap gap-1 mb-2">
+                          {note.tags.slice(0, 3).map((tag, tagIndex) => (
+                            <span 
+                              key={tagIndex} 
+                              className="badge text-dark small" 
+                              style={{ 
+                                backgroundColor: '#e3f2fd', 
+                                border: '1px solid #bbdefb',
+                                fontSize: '0.7rem'
+                              }}
+                            >
+                              <i className="bi bi-tag me-1"></i>
+                              {tag.name || tag}
+                            </span>
+                          ))}
+                          {note.tags.length > 3 && (
+                            <span 
+                              className="badge bg-secondary text-white small" 
+                              style={{ fontSize: '0.7rem' }}
+                            >
+                              +{note.tags.length - 3}
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-
-                {note.content && (
-                  <p className="card-text text-muted small">
-                    {truncateHTML(note.content)}
-                  </p>
-                )}
-
-                {/* Tags */}
-                {note.tags && note.tags.length > 0 && (
-                  <div className="mb-2">
-                    {note.tags.slice(0, 3).map((tag, index) => (
-                      <span key={index} className="badge bg-secondary me-1">
-                        #{tag}
-                      </span>
-                    ))}
-                    {note.tags.length > 3 && (
-                      <span className="badge bg-light text-dark">
-                        +{note.tags.length - 3}
-                      </span>
+                    
+                    {/* Meta Info */}
+                    <div className="d-flex flex-column flex-sm-row gap-2 align-items-start">
+                      {/* Created/Updated date */}
+                      <small className="text-muted d-flex align-items-center">
+                        <i className="bi bi-clock me-1"></i>
+                        Cập nhật: {formatDate(note.updatedAt)}
+                      </small>
+                      
+                      {/* Creator info */}
+                      {note.author && (
+                        <small className="text-muted d-flex align-items-center">
+                          <i className="bi bi-person-circle me-1"></i>
+                          Tạo bởi: {note.author.name || note.author.email}
+                        </small>
+                      )}
+                      
+                      {/* File attachments */}
+                      {note.attachments && note.attachments.length > 0 && (
+                        <small className="text-muted d-flex align-items-center">
+                          <i className="bi bi-paperclip me-1"></i>
+                          {note.attachments.length} file đính kèm
+                        </small>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* Right Content - Actions */}
+                  <div className="d-flex align-items-center gap-2 flex-shrink-0">
+                    {/* Actions Dropdown */}
+                    {showActions && (
+                      <div className="dropdown">
+                        <button 
+                          className="btn btn-sm btn-outline-secondary border-0 p-2" 
+                          type="button" 
+                          data-bs-toggle="dropdown"
+                          aria-expanded="false"
+                          style={{ minWidth: '32px', minHeight: '32px' }}
+                        >
+                          <i className="bi bi-three-dots-vertical"></i>
+                        </button>
+                        <ul className="dropdown-menu dropdown-menu-end shadow-sm">
+                          <li>
+                            <button 
+                              className="dropdown-item py-2" 
+                              type="button"
+                              onClick={() => handleShareNote(note)}
+                            >
+                              <i className="bi bi-share me-2"></i>
+                              Chia sẻ lại
+                            </button>
+                          </li>
+                          <li>
+                            <button 
+                              className="dropdown-item py-2" 
+                              type="button"
+                              onClick={() => handleEditPermissions(note)}
+                            >
+                              <i className="bi bi-shield-lock me-2"></i>
+                              Quyền truy cập
+                            </button>
+                          </li>
+                          <li>
+                            <button className="dropdown-item py-2" type="button">
+                              <i className="bi bi-eye me-2"></i>
+                              Xem chi tiết
+                            </button>
+                          </li>
+                        </ul>
+                      </div>
                     )}
                   </div>
-                )}
-
-                {/* Permissions */}
-                {note.workspacePermissions && (
-                  <div className="mb-2">
-                    <small className="text-muted">Quyền: </small>
-                    {getPermissionsBadge(note.workspacePermissions)}
-                  </div>
-                )}
-
-                <div className="small text-muted">
-                  <div className="mb-1">
-                    <i className="bi bi-clock me-1"></i>
-                    Cập nhật: {formatDate(note.updatedAt)}
-                  </div>
-
-                  <div className="mb-1">
-                    <i className="bi bi-person-circle me-1"></i>
-                    Tạo bởi: {note.creator?.name || note.creator?.email}
-                  </div>
-
-                  {note.files && note.files.length > 0 && (
-                    <div className="mb-1">
-                      <i className="bi bi-paperclip me-1"></i>
-                      {note.files.length} file đính kèm
-                    </div>
-                  )}
-
-                  {note.version && (
-                    <div className="mb-1">
-                      <i className="bi bi-arrow-repeat me-1"></i>
-                      Version: {note.version}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Footer with quick actions */}
-              <div className="card-footer bg-transparent">
-                <div className="d-flex justify-content-between align-items-center">
-                  <small className="text-muted">
-                    <i className="bi bi-calendar3 me-1"></i>
-                    {formatDate(note.createdAt)}
-                  </small>
-                  
-                  {note.isPublic && (
-                    <span className="badge bg-success">
-                      <i className="bi bi-globe me-1"></i>
-                      Public
-                    </span>
-                  )}
                 </div>
               </div>
             </div>
+
+            {/* Workspace permissions info */}
+            {note.workspacePermissions && (
+              <div className="mt-2 p-2 bg-light rounded">
+                <small className="text-muted">
+                  <i className="bi bi-shield me-1"></i>
+                  Quyền trong workspace: 
+                  {note.workspacePermissions.canView && ' Xem'}
+                  {note.workspacePermissions.canEdit && ' • Chỉnh sửa'}
+                  {note.workspacePermissions.canDelete && ' • Xóa'}
+                </small>
+              </div>
+            )}
           </div>
         ))}
       </div>
